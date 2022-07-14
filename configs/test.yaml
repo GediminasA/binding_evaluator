@@ -1,0 +1,4 @@
+structures_folder: structures #in this folde either pdb files are placed or downloaded from pdb into this folder
+pdb_stems: 3BZD # if there are no <pdb_stem>.pdb files in the structures_folder such structures is being tried to download
+workdir: test_run
+main_chain: A
