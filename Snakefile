@@ -11,7 +11,7 @@ work_dir = config["workdir"]
 def get_interacting_chains(pdbf,main_chain):
     from Bio import PDB as pdb
     ids = list()
-    p = pdb.PDBParser()
+    p = pdb.PDBParser(QUIET=True)
     structure = p.get_structure("X", pdbf)
     sizes = []
     for model in structure:
@@ -23,7 +23,6 @@ def get_interacting_chains(pdbf,main_chain):
     sizes.sort(key=lambda tup: tup[1],reverse = True)
     largest_chain_id = sizes[0][0]
 
-    print("WW ",largest_chain_id)
     is_main_chain = (main_chain in ids)
     out=list()
     if not is_main_chain:
@@ -39,9 +38,9 @@ def get_interacting_chains(pdbf,main_chain):
 
 rule all:
     input: 
-        expand(work_dir+"/pdbfixed/{stem}.pdb",stem=pdb_stems),
+        expand(work_dir+"/pdb2pqr/{stem}.pdb",stem=pdb_stems),
         expand(
-            work_dir + "/pdbfixed_prodigy/{id}.sc",
+            work_dir + "/pdb2pqr_prodigy/{id}.sc",
             id=pdb_stems
         )
 
@@ -86,7 +85,7 @@ rule remove_hetatoms:
 
 rule pdb_fix:
     input:
-        work_dir + "/delhetatm/{stem}.pdb"
+        work_dir + "/pristine/{stem}.pdb"
     output:
         work_dir + "/pdbfixed/{stem}.pdb"
     shell:
@@ -95,18 +94,31 @@ rule pdb_fix:
         """
 
 
-
-
-rule run_prodigy_pdbfixed:
+rule pdb2pqr:
     input:
-        complex_str = work_dir + "/pdbfixed/{id}.pdb"
+        work_dir + "/pdbfixed/{stem}.pdb"
     output:
-        complex_prodigy = work_dir + "/pdbfixed_prodigy/{id}.sc"
+        pdb = work_dir + "/pdb2pqr/{stem}.pdb",
+        pqr = temp(work_dir + "/pdb2pqr/{stem}.pqr")
+    log:
+        work_dir + "/pdb2pqr/{stem}.log"
+    shell:
+        """
+        pdb2pqr30 --drop-water  {input} {output.pqr}  --pdb-output {output.pdb} &> {log}
+        """
+
+
+rule run_prodigy_pdb2pqr:
+    input:
+        complex_str = work_dir + "/pdb2pqr/{id}.pdb"
+    output:
+        complex_prodigy = work_dir + "/pdb2pqr_prodigy/{id}.sc"
     params:
         id= "{id}",
         main_chain=config["main_chain"]
+    log:
+        work_dir + "/pdb2pqr_prodigy/{id}.log"
     run:
-        print(params.id)
         part1,part2 = get_interacting_chains(input[0],params.main_chain)
         part2 = ",".join(part2)
         shell(
@@ -114,12 +126,13 @@ rule run_prodigy_pdbfixed:
                 set +e
                 out=`prodigy  {input} --selection {part1} {part2} -q `
                 exitcode=$?
-                echo $exitcode
                 if [ $exitcode -eq 1 ]
                 then
+                    echo crashed {params.id} >>{log}
                     echo NA  {part1} {part2} {params.id} > {output}
                 else
-                    echo $out | cut -f 2 -d " " | sed "s/$/ {part1} {part2} {params.id}/g" > {output} 
+                    echo $out | cut -f 2 -d " " | sed "s/$/ {part1} {part2} {params.id}/g" &>> {output}
+                    echo $out >> {log} 
                 fi
             """
         )
