@@ -1,0 +1,3 @@
+[submodule "covid-lt"]
+	path = covid-lt
+	url = git@github.com:merkys/covid-lt.git
