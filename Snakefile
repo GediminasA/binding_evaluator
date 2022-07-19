@@ -138,6 +138,30 @@ rule run_prodigy_pdb2pqr:
         )
 
 
+rule promod_fix_pdb:
+    input:
+        work_dir + "/pristine/{stem}.pdb"
+    output:
+        work_dir + "/promod/{stem}.pdb"
+    singularity:
+        "container.simg"
+    log:
+        work_dir + "/promod/{stem}.log"
+    shell:
+        """
+        TMP_DIR=$(mktemp --directory)
+        covid-lt/bin/pdb_align {input} > $TMP_DIR/{wildcards.stem}.pdb 2> {log} || true
+        if [ ! -s $TMP_DIR/{wildcards.stem}.pdb ]
+        then
+            echo -n > {output}
+            rm -rf $TMP_DIR
+            exit
+        fi
+        covid-lt/bin/promod-fix-pdb $TMP_DIR/{wildcards.stem}.pdb > $TMP_DIR/fixed.pdb 2>> {log} || true
+        covid-lt/bin/pdb_rename_chains {input} --source $TMP_DIR/fixed.pdb > {output} 2>> {log} || true
+        rm -rf $TMP_DIR
+
+
 rule singularity_container:
     input:
         "container.def"
