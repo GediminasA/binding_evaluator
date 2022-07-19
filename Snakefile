@@ -136,3 +136,12 @@ rule run_prodigy_pdb2pqr:
                 fi
             """
         )
+
+
+rule singularity_container:
+    input:
+        "container.def"
+    output:
+        "container.simg"
+    shell:
+        "sudo singularity build {output} {input}"
