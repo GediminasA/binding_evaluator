@@ -6,9 +6,11 @@ dependencies:
   - biopython
   - r-base=4.1.3
   - snakemake=7.3.8
+  - singularity=3.8.6
   - pdbfixer
   - pdb2pqr
   - openmm
+  - pip 
   - pip:
     - git+https://github.com/haddocking/prodigy.git
     - pdb-tools
