@@ -65,7 +65,8 @@ rule renumber_against_seqres:
 
 rule fix_with_promod:
     input:
-        "{stem}.pdb"
+        "{stem}.pdb",
+        "container.simg"
     output:
         "{stem}_promod.pdb"
     log:
@@ -73,7 +74,7 @@ rule fix_with_promod:
     singularity: "container.simg"
     shell:
         """
-        covid-lt/bin/promod-fix-pdb   {input} 1>  {output} 2> {log}
+        covid-lt/bin/promod-fix-pdb   {input[0]} 1>  {output} 2> {log}
         """ 
 
 rule pdb2pqr:
@@ -98,6 +99,23 @@ rule pdb_fix:
         """
         pdbfixer {input} --output {output} --add-residues
         """
+
+rule copy_alreadyprepared4fix:
+        input:
+            config["preprocessed_structures"]+"/{stem}.pdb"
+        output:
+            work_dir+"/process_provided/{stem,[^_]+}.pdb"
+        shell:
+            "cp {input} {output}"
+
+rule copy_alreadyprepared:
+        input:
+            work_dir+"/process_provided/{stem}_pdb2pqr_pdbfix.pdb"
+        output:
+            work_dir+"/processed/{stem,[^_]+}.pdb"
+        shell:
+            "cp {input} {output}"
+
 rule copy_prepared:
         input:
             pdbproc_dir + "/process/{stem}_seqresMatched_promod_pdb2pqr_pdbfix.pdb"
@@ -105,3 +123,5 @@ rule copy_prepared:
             work_dir+"/processed/{stem,[^_]+}.pdb"
         shell:
             "cp {input} {output}"
+
+ruleorder:  copy_alreadyprepared > copy_prepared
