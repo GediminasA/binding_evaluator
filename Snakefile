@@ -9,17 +9,23 @@ work_dir = config["workdir"]
 
 # include rules to prepare file downloadable rom file
 include: "snakefiles/prepare_from_pdbdownloaded.smk"
+# prodigy evaluation on intial structure
+include: "snakefiles/complex_evaluations_prodigy.smk"
 # rosetta related evaluation
 include: "snakefiles/rosetta_binding_evaluation.smk"
 
-local_docking_runs_ids = list(range(1,config['rosetta']['local_docking_runs'],1))
+rule prodigy_static_evaluation:
+    input:
+        expand(work_dir + "/prodigy_static/{stem}.sc",stem=pdb_stems)
+
 rule rosetta_static_evaluation:
     input:
-        #expand(work_dir+"/rosetta_on_static/{stem}_0001.pdb",stem=pdb_stems)
-        #expand(work_dir+"/rosetta_on_static/localdockref_eval/{stem}_{id}.sc",stem=pdb_stems,id=local_docking_runs_ids)
-        expand(work_dir+"/rosetta_on_static/localdockref/{stem}_{id}_prodigy.sc",stem=pdb_stems,id=local_docking_runs_ids)
-        #expand(work_dir+"/scores/rosetta_static_{stem}_alldata.csv",stem=pdb_stems)
+        expand(work_dir+"/scores/rosetta_static_{stem}_summary.csv",stem=pdb_stems)
 
 rule initialfix:
     input:
         expand(work_dir+"/processed/{stem}.pdb",stem=pdb_stems)
+
+rule collect_data:
+    input:
+        expand(work_dir+"/processed_info/{stem}_isIg.tsv", stem=pdb_stems)
