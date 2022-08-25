@@ -1,4 +1,8 @@
 import os
+
+local_docking_runs_ids = list(range(1,config['rosetta']['local_docking_runs'],1))
+
+
 rule repack_docking:
     input:
         initial_complex = work_dir+"/processed/{stem}.pdb"
@@ -51,7 +55,7 @@ rule run_localdocking:
     -partners {interactors}   -ex1  -ex2aro  -dock_pert 3 8   \
     &> {log.complex_log}""")
 
-rule run_localdocking_refinament:
+rule run_localdocking_refinamentlocal_docking_runs_ids:
     input:
         complex = work_dir+"/rosetta_on_static/localdock/{stem}_{id}.out",
         complexpdb = work_dir+"/rosetta_on_static/prepack/{stem}_0001.pdb"
@@ -100,18 +104,6 @@ rule run_localdocking_refinament_eval:
     &> {log.complex_log}""")
 
 
-local_docking_runs_ids = list(range(1,config['rosetta']['local_docking_runs'],1))
-rule rosetta_static_summary:
-    input:
-        #expand(work_dir+"/rosetta_on_static/{stem}_0001.pdb",stem=pdb_stems)
-        expand(work_dir+"/rosetta_on_static/localdockref_eval/{stem}_{id}.sc",stem=pdb_stems,id=local_docking_runs_ids)
-    params:
-        id = "{stem}"
-    output:
-        work_dir+"/scores/rosetta_static_{stem,[^_]+}_alldata.csv",
-        work_dir+"/scores/rosetta_static_{stem,[^_]+}_summary.csv",
-    notebook:
-        "notebooks/summarise_rosetta_on_static.r.ipynb"
 
 rule run_extract_pdb:
     input:
@@ -121,7 +113,7 @@ rule run_extract_pdb:
     log:
         complex_log = work_dir+"/rosetta_on_static/localdockref/{stem}_{id}_get_pdb.log"
     params:
-        bin = config["rosetta"]["folder"]+"/main/source/bin/" + "InterfaceAnalyzer" + config["rosetta"]["binaries_suffix"],
+        bin = config["rosetta"]["folder"]+"/main/source/bin/" + "extract_pdbs" + config["rosetta"]["binaries_suffix"],
         db = config["rosetta"]["folder"] + "/main/database",
         complex_str_dir = work_dir+"/rosetta_on_static/localdockref/{stem}_{id}_pdb" 
     threads: 1
@@ -165,13 +157,15 @@ rule run_prodigy_after_rosetta:
             """
         )
 
-rule rosetta_static_summary_prodogy:
+rule rosetta_static_summary:
     input:
-        expand(work_dir+"/rosetta_on_static/localdockref/{stem}_{id}_prodigy.sc",stem=pdb_stems,id=local_docking_runs_ids)
+        prodigy = [work_dir+"/rosetta_on_static/localdockref/{stem}_"+str(id)+"_prodigy.sc" for id in local_docking_runs_ids],
+        rosetta = [work_dir+"/rosetta_on_static/localdockref_eval/{stem}_"+str(id)+".sc" for id in local_docking_runs_ids]
     params:
-        id = "{stem}"
+        id = "{stem}",
+        fraction4median = 0.1
     output:
-        work_dir+"/scores/rosetta_static_prodigy_{stem,[^_]+}_alldata.csv",
-        work_dir+"/scores/rosetta_static_prodigy_{stem,[^_]+}_summary.csv",
+        work_dir+"/scores/rosetta_static_{stem,[^_]+}_alldata.csv",
+        work_dir+"/scores/rosetta_static_{stem,[^_]+}_summary.csv",
     notebook:
         "notebooks/summarise_rosetta_prodigy_on_static.r.ipynb"
