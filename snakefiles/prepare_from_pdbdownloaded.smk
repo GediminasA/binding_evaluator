@@ -13,28 +13,6 @@ rule singularity_container:
 
 # returns chains remaining  without a main chain
 # if the expected main chain doesn't exits then the largest chain is taken as the main chain
-def get_interacting_chains(pdbf,main_chain):
-    from Bio import PDB as pdb
-    ids = list()
-    p = pdb.PDBParser(QUIET=True)
-    structure = p.get_structure("X", pdbf)
-    sizes = []
-    for model in structure:
-        for chain in model:
-            residues_n = len(list(chain.get_residues()))
-            id = chain.get_id()
-            ids.append(id)
-            sizes.append((id,residues_n))
-    sizes.sort(key=lambda tup: tup[1],reverse = True)
-    largest_chain_id = sizes[0][0]
-
-    is_main_chain = (main_chain in ids)
-    out=list()
-    if not is_main_chain:
-        main_chain = largest_chain_id
-    out = set(ids)-set([main_chain])
-
-    return(main_chain,list(out))
 
 pdbproc_dir = work_dir + "/pdb_proc"
 
@@ -125,3 +103,42 @@ rule copy_prepared:
             "cp {input} {output}"
 
 ruleorder:  copy_alreadyprepared > copy_prepared
+
+#extract fasta files and run hhblitz to identify antibodies
+
+rule extract_seqs:
+    input:
+        work_dir+"/processed/{stem}.pdb"
+    output:
+        work_dir+"/processed_info/{stem,[^_]+}.fasta"
+    shell:
+        "pdb_tofasta -multi {input} > {output} "
+
+rule search4antibodies:
+    input:
+        work_dir+"/processed_info/{stem}.fasta"
+    output:
+        work_dir+"/processed_info/{stem,[^_]+}_isIg.tsv"
+    params:
+        hmm = "data/hhms/immunoglobin/imuno.hmm"
+    log: 
+        out = work_dir+"/processed_info/{stem}_isIg.log"
+    threads: 2
+    shell:
+        """
+        hmmscan --tblout {output}  --noali   {params.hmm} {input} &> {log.out}
+        """
+
+rule determene_interacting_groups:
+    input:
+        ig_data = work_dir+"/processed_info/{stem}_isIg.tsv",
+        fa = work_dir+"/processed_info/{stem,[^_]+}.fasta"
+    output:
+        work_dir+"/processed_info/{stem,[^_]+}_interactigGroups.tsv"
+    threads: 2
+    notebook:
+        "notebooks/detect_interactors.r.ipynb"
+
+    
+
+
