@@ -27,3 +27,4 @@ def get_interacting_chains(pdbf,main_chain):
     out_str = " ".join(out)
     print(f" Main chain is {main_chain}, other chains are: {out_str}")
     return(main_chain,list(out))
+    
