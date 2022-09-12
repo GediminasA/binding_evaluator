@@ -1,5 +1,15 @@
 
-def get_interacting_chains(pdbf,main_chain):
+def get_interacting_chains(precalculated_data):
+    data = open(precalculated_data,"r").readlines()[0].replace("\n","").split("\t")
+    data = [l.split(',') for l in data]
+    data = [data[0],data[1]]
+    data = sorted(data, key=lambda l: (len(l)),reverse=False)
+    main_chain = data[0]
+    out = data[1]
+    out_str = " ".join(out)
+    return(main_chain,list(out))
+    
+def get_interacting_chainsv1(pdbf,main_chain):
     from Bio import PDB as pdb
     ids = list()
     p = pdb.PDBParser(QUIET=True)
