@@ -129,7 +129,7 @@ rule search4antibodies:
         hmmscan --tblout {output}  --noali   {params.hmm} {input} &> {log.out}
         """
 
-rule determene_interacting_groups:
+rule determine_interacting_groups:
     input:
         ig_data = work_dir+"/processed_info/{stem}_isIg.tsv",
         fa = work_dir+"/processed_info/{stem,[^_]+}.fasta"
