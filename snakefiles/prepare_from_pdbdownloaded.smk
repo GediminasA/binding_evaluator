@@ -139,6 +139,30 @@ rule determine_interacting_groups:
     notebook:
         "notebooks/detect_interactors.r.ipynb"
 
+rule split_complex:
+    input: 
+        pdb = work_dir+"/processed/{stem}.pdb",
+        interacting_groups = work_dir+"/processed_info/{stem,[^_]+}_interactigGroups.tsv"
+    output:
+        part1 = work_dir+"/splits/{stem,[^_]+}/part1.pdb",
+        part2 = work_dir+"/splits/{stem,[^_]+}/part2.pdb",
+        full = work_dir+"/splits/{stem,[^_]+}/full.pdb",
+    run:
+        part1,part2 = get_interacting_chains(input.interacting_groups)
+        part1sel=','.join(part1)
+        part2sel=','.join(part2)
+        print(part1sel,part2sel)
+        shell(
+            """
+                pdb_selchain -{part1sel} {input.pdb}  > {output.part1} 
+                pdb_selchain -{part2sel} {input.pdb} > {output.part2}
+                cp {input.pdb}   {output.full} 
+            """
+        )
+    
+
+    
+
     
 
 
