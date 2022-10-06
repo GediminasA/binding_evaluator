@@ -6,7 +6,8 @@ work_dir = config["workdir"]
 
 
 
-
+# include utilities 
+include: "snakefiles/functions_and_utilities.smk"
 # include rules to prepare file downloadable rom file
 include: "snakefiles/prepare_from_pdbdownloaded.smk"
 # prodigy evaluation on intial structure
@@ -28,4 +29,4 @@ rule initialfix:
 
 rule collect_data:
     input:
-        expand(work_dir+"/processed_info/{stem}_isIg.tsv", stem=pdb_stems)
+        expand(work_dir+"/processed_info/{stem}_interactigGroups.tsv", stem=pdb_stems)
