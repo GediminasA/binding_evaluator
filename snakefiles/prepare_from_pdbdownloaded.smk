@@ -157,6 +157,7 @@ rule split_complex:
                 pdb_selchain -{part1sel} {input.pdb}  > {output.part1} 
                 pdb_selchain -{part2sel} {input.pdb} > {output.part2}
                 cp {input.pdb}   {output.full} 
+                
             """
         )
     
