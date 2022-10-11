@@ -17,7 +17,7 @@ include: "snakefiles/rosetta_binding_evaluation.smk"
 
 rule prodigy_static_evaluation:
     input:
-        expand(work_dir + "/prodigy_static/{stem}.sc",stem=pdb_stems)
+        expand(work_dir + "/prodigy_static/{stem}.csv",stem=pdb_stems)
 
 rule rosetta_static_evaluation:
     input:
