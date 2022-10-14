@@ -2,13 +2,7 @@ import os
 
 
 
-rule singularity_container:
-    input:
-        "container.def"
-    output:
-        "container.simg"
-    shell:
-        "singularity  build --fakeroot {output} {input}"
+
 
 
 # returns chains remaining  without a main chain
@@ -44,12 +38,12 @@ rule renumber_against_seqres:
 rule fix_with_promod:
     input:
         "{stem}.pdb",
-        "container.simg"
+        "containers/promod.sif"
     output:
         "{stem}_promod.pdb"
     log:
         "{stem}_promod.log"
-    singularity: "container.simg"
+    singularity: "containers/promod.sif"
     shell:
         """
         covid-lt/bin/promod-fix-pdb   {input[0]} 1>  {output} 2> {log}
@@ -139,14 +133,20 @@ rule determine_interacting_groups:
     notebook:
         "notebooks/detect_interactors.r.ipynb"
 
+
+# pdb file name structure
+# {pdbname}_{frameid}_{part}.pdb
+# {pdbname} - is a short name of PDB structure, cannot contain '_';
+# {frameid} - a model id. In case of a static case keep it equal to '0', must be an integer;
+# {part} - any of 'part1', 'part2', 'full'
 rule split_complex:
     input: 
         pdb = work_dir+"/processed/{stem}.pdb",
-        interacting_groups = work_dir+"/processed_info/{stem,[^_]+}_interactigGroups.tsv"
+        interacting_groups = work_dir+"/processed_info/{stem}_interactigGroups.tsv"
     output:
-        part1 = work_dir+"/splits/{stem,[^_]+}/part1.pdb",
-        part2 = work_dir+"/splits/{stem,[^_]+}/part2.pdb",
-        full = work_dir+"/splits/{stem,[^_]+}/full.pdb",
+        part1 = work_dir+"/static/splits/{stem,[^_]+}_0_part1.pdb",
+        part2 = work_dir+"/static/splits/{stem,[^_]+}_0_part2.pdb",
+        full = work_dir+"/static/splits/{stem,[^_]+}_0_full.pdb",
     run:
         part1,part2 = get_interacting_chains(input.interacting_groups)
         part1sel=','.join(part1)
@@ -161,9 +161,3 @@ rule split_complex:
             """
         )
     
-
-    
-
-    
-
-

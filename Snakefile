@@ -14,18 +14,24 @@ include: "snakefiles/prepare_from_pdbdownloaded.smk"
 include: "snakefiles/complex_evaluations_prodigy.smk"
 # rosetta related evaluation
 include: "snakefiles/rosetta_binding_evaluation.smk"
+# solubility
+include: "snakefiles/solubility_evaluations.smk"
+
+
+# main rules 
+
+rule get_freesasa:
+    input:
+        expand(work_dir + "/static/splits/{stem}_0_{part}_freesasa.tsv",stem=pdb_stems,part=["part1","part2","full"])
+
+rule get_splits:
+    input:
+        expand(work_dir + "/static/splits/{stem}_0_{part}.pdb",stem=pdb_stems,part=["part1","part2","full"])
+
 
 rule prodigy_static_evaluation:
     input:
-        expand(work_dir + "/prodigy_static/{stem}.csv",stem=pdb_stems)
-
-rule rosetta_static_evaluation:
-    input:
-        expand(work_dir+"/scores/rosetta_static_{stem}_summary.csv",stem=pdb_stems)
-
-rule initialfix:
-    input:
-        expand(work_dir+"/processed/{stem}.pdb",stem=pdb_stems)
+        expand(work_dir + "/static/{stem}_prodigy.tsv",stem=pdb_stems)
 
 rule collect_data:
     input:
