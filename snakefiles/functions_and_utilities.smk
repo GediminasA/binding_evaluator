@@ -1,3 +1,14 @@
+### CONTAINER BUILDING RULES ###
+rule singularity_container:
+    input:
+        "{container}.def"
+    output:
+        "{container}.sif"
+    shell:
+        "singularity  build  {output} {input}"
+
+
+
 
 def get_interacting_chains(precalculated_data):
     data = open(precalculated_data,"r").readlines()[0].replace("\n","").split("\t")

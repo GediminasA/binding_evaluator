@@ -4,11 +4,11 @@ rule run_prodigy:
         complex_str = work_dir+"/processed/{stem}.pdb",
         interacting_groups = work_dir+"/processed_info/{stem,[^_]+}_interactigGroups.tsv"
     output:
-        complex_prodigy = work_dir + "/tmp/prodigy_static/{stem,[^_]+}.out"
+        complex_prodigy = work_dir + "/static/{stem,[^_]+}_prodigy_ini.out"
     params:
         id= "{stem}",
     log:
-        work_dir + "/tmp/prodigy_static/{stem}.log"
+        work_dir + "/static/{stem}_prodigy_ini.log"
     run:
         part1,part2 = get_interacting_chains(input.interacting_groups)
         part1 = ",".join(part1)
@@ -33,10 +33,11 @@ rule run_prodigy:
 
 rule parse_prodigy:
     input:
-        complex_prodigy = work_dir + "/tmp/prodigy_static/{stem,[^_]+}.out"
+        complex_prodigy = work_dir + "/static/{stem}_prodigy_ini.out"
     output:
-        complex_prodigy = work_dir + "/prodigy_static/{stem,[^_]+}.csv"
+        complex_prodigy = work_dir + "/static/{stem}_prodigy.tsv"
     params:
         id= "{stem}",
     notebook:
         "notebooks/parse_prodigy.r.ipynb"
+

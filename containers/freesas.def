@@ -1,0 +1,13 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%post
+    apt-get update
+    apt-get install --yes  git build-essential autoconf libc++-dev libc++abi-dev libtool wget unzip libxml2-dev libjson-c-dev    
+    apt-get install --yes   libxml2-dev libjson-c-dev pkg-config
+    pkg-config --cflags libxml-2.0
+    wget https://github.com/mittinatten/freesasa/releases/download/2.1.2/freesasa-2.1.2.zip
+    unzip freesasa-2.1.2.zip
+    cd freesasa-2.1.2
+    ./configure
+    make && make install
