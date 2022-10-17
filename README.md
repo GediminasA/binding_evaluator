@@ -30,15 +30,9 @@
 
 6. Activate created environment:
 ```bash
-    source activate binding_evaluator
+    conda activate binding_evaluator
 ```
 
-To setup the environment:
-```
-git clone --recurse-submodules  git@github.com:GediminasA/binding_evaluator.git
-cd git clone --recurse-submodules  git@github.com:GediminasA/binding_evaluator.git
-
-```
 
 To run prodigy evaluations on a toy set of complexes you could run this command:
 ```
