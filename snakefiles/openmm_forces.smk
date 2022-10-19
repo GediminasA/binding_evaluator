@@ -1,3 +1,7 @@
+### WILDCARDS ###
+wildcard_constraints:
+    forcefield = "[a-zA-Z0-9_]+"
+
 ### CONTAINER BUILDING RULES ###
 rule build_openmm:
     input:
