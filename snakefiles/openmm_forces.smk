@@ -23,5 +23,5 @@ rule evaluate_openmm:
         "containers/openmm.sif"
     shell:
         """
-        covid-lt/bin/pdb_openmm_minimize {input.structure} --forcefield {wildcards.forcefield}.xml --max-iterations 0 > /dev/null 2> {output}
+        covid-lt/bin/pdb_openmm_minimize {input.structure} --forcefield {wildcards.forcefield}.xml --max-iterations 0 --print-forces > {output}
         """
