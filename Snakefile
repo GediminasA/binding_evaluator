@@ -16,6 +16,8 @@ include: "snakefiles/complex_evaluations_prodigy.smk"
 include: "snakefiles/rosetta_binding_evaluation.smk"
 # solubility
 include: "snakefiles/solubility_evaluations.smk"
+# openmm forces
+include: "snakefiles/openmm_forces.smk"
 
 
 # main rules 
