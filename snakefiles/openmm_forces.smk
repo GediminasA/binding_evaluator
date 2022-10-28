@@ -18,7 +18,7 @@ rule evaluate_openmm:
         structure = "{directory}/{stem}_{part}_{frame}.pdb",
         container = "containers/openmm.sif"
     output:
-        tsv = temp("{directory}/{stem,[^_]+}_{part,[\d]+}_{frame,[^_]+}_ff_{forcefield}.tsv")
+        tsv = "{directory}/{stem,[^_]+}_{part,[\d]+}_{frame,[^_]+}_ff_{forcefield}.tsv"
     container:
         "containers/openmm.sif"
     shell:
