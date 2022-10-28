@@ -32,7 +32,7 @@ rule renumber_against_seqres:
         pdbproc_dir + "/process/{stem}_seqresMatched.log"
     shell:
         """
-        covid-lt/bin/pdb_align {input} 1>  {output} 2> {log}
+        PYTHONPATH=covid-lt covid-lt/bin/pdb_align {input} 1> {output} 2> {log}
         """ 
 
 rule fix_with_promod:
