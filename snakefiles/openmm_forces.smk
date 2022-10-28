@@ -1,6 +1,7 @@
 ### WILDCARDS ###
 wildcard_constraints:
-    forcefield = "[a-zA-Z0-9_]+"
+    ff1 = "[a-zA-Z0-9_]+",
+    ff2 = "[a-zA-Z0-9_]+"
 
 ### CONTAINER BUILDING RULES ###
 rule build_openmm:
@@ -13,15 +14,28 @@ rule build_openmm:
 
 ### EVALUATION RULES ###
 
-rule evaluate_openmm:
+rule evaluate_openmm_ff1:
     input:
         structure = "{directory}/{stem}_{part}_{frame}.pdb",
         container = "containers/openmm.sif"
     output:
-        tsv = "{directory}/{stem,[^_]+}_{part,[\d]+}_{frame,[^_]+}_ff_{forcefield}.tsv"
-    container:
+        tsv = "{directory}/{stem,[^_]+}_{part,[\d]+}_{frame,[^_]+}_ff_{ff1}.tsv"
+    singularity:
         "containers/openmm.sif"
     shell:
         """
-        covid-lt/bin/pdb_openmm_minimize {input.structure} --forcefield {wildcards.forcefield}.xml --max-iterations 0 --print-forces > {output}
+        covid-lt/bin/pdb_openmm_minimize {input.structure} --forcefield {wildcards.ff1}.xml --max-iterations 0 --print-forces > {output}
+        """
+
+rule evaluate_openmm_ff2:
+    input:
+        structure = "{directory}/{stem}_{part}_{frame}.pdb",
+        container = "containers/openmm.sif"
+    output:
+        tsv = "{directory}/{stem,[^_]+}_{part,[\d]+}_{frame,[^_]+}_ff_{ff1}_{ff2}.tsv"
+    singularity:
+        "containers/openmm.sif"
+    shell:
+        """
+        covid-lt/bin/pdb_openmm_minimize {input.structure} --forcefield {wildcards.ff1}.xml --forcefield {wildcards.ff2}.xml --max-iterations 0 --print-forces > {output}
         """
