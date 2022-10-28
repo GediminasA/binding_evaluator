@@ -32,7 +32,7 @@ rule evaluate_openmm_ff2:
         structure = "{directory}/{stem}_{part}_{frame}.pdb",
         container = "containers/openmm.sif"
     output:
-        tsv = "{directory}/{stem,[^_]+}_{part,[\d]+}_{frame,[^_]+}_ff_{ff1}_{ff2}.tsv"
+        tsv = "{directory}/{stem,[^_]+}_{part,[\d]+}_{frame,[^_]+}_ff_{ff1}-{ff2}.tsv"
     singularity:
         "containers/openmm.sif"
     shell:
