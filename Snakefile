@@ -38,3 +38,8 @@ rule prodigy_static_evaluation:
 rule collect_data:
     input:
         expand(work_dir+"/processed_info/{stem}_interactigGroups.tsv", stem=pdb_stems)
+
+
+rule calculate_openmm_ff1:
+    input:
+        expand(work_dir + "/static/splits/{stem}_0_{part}_ff_{forcefield},stem=pdb_stems,part=["part1","part2","full"],forcefield=["amber99sbildn","amber10","amoeba2013","charmm36"])
