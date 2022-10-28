@@ -42,4 +42,4 @@ rule collect_data:
 
 rule calculate_openmm_ff1:
     input:
-        expand(work_dir + "/static/splits/{stem}_0_{part}_ff_{forcefield}",stem=pdb_stems,part=["part1","part2","full"],forcefield=["amber99sbildn","amber10","amoeba2013","charmm36"])
+        expand(work_dir + "/static/splits/{stem}_0_{part}_ff_{forcefield}.tsv",stem=pdb_stems,part=["part1","part2","full"],forcefield=["amber99sbildn","amber10","amoeba2013","charmm36"])
