@@ -43,10 +43,10 @@ rule fix_with_promod:
         "{stem}_promod.pdb"
     log:
         "{stem}_promod.log"
-    singularity: "containers/promod.sif"
+    container: "containers/promod.sif"
     shell:
         """
-        covid-lt/bin/promod-fix-pdb   {input[0]} 1>  {output} 2> {log}
+        PYTHONPATH=covid-lt covid-lt/bin/promod-fix-pdb {input[0]} 1> {output} 2> {log}
         """ 
 
 rule pdb2pqr:
