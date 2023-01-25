@@ -19,7 +19,7 @@ scheduler: greedy
 conda-frontend: mamba
 use-conda: True
 use-singularity: True
-cluster-status: simple/status-sacct.sh
+cluster-status: simple/status-sacct-robust.sh
 cluster-cancel: scancel
 cluster-cancel-nargs: 50
 #--job-name=smk-{rule}-{wildcards}

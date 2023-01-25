@@ -20,11 +20,13 @@ rule evaluate_openmm_ff1:
         container = "containers/openmm.sif"
     output:
         tsv = "{directory}/{stem,[^_]+}_{part,[\d]+}_{frame,[^_]+}_ff_{ff1}.tsv"
+    log: 
+        "{directory}/{stem,[^_]+}_{part,[\d]+}_{frame,[^_]+}_ff_{ff1}.log"
     singularity:
         "containers/openmm.sif"
     shell:
         """
-        covid-lt/bin/pdb_openmm_minimize {input.structure} --forcefield {wildcards.ff1}.xml --max-iterations 0 --print-forces > {output}
+        covid-lt/bin/pdb_openmm_minimize {input.structure} --forcefield {wildcards.ff1}.xml --max-iterations 0 --print-forces 2> {log}  1> {output}
         """
 
 rule evaluate_openmm_ff2:
@@ -33,9 +35,11 @@ rule evaluate_openmm_ff2:
         container = "containers/openmm.sif"
     output:
         tsv = "{directory}/{stem,[^_]+}_{part,[\d]+}_{frame,[^_]+}_ff_{ff1}-{ff2}.tsv"
+    log:
+        "{directory}/{stem,[^_]+}_{part,[\d]+}_{frame,[^_]+}_ff_{ff1}-{ff2}.log"
     singularity:
         "containers/openmm.sif"
     shell:
         """
-        covid-lt/bin/pdb_openmm_minimize {input.structure} --forcefield {wildcards.ff1}.xml --forcefield {wildcards.ff2}.xml --max-iterations 0 --print-forces #> {output}
+        covid-lt/bin/pdb_openmm_minimize {input.structure} --forcefield {wildcards.ff1}.xml --forcefield {wildcards.ff2}.xml --max-iterations 0 --print-forces 2> {log}  1> {output}
         """
