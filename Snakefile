@@ -20,6 +20,10 @@ include: "snakefiles/solubility_evaluations.smk"
 include: "snakefiles/openmm_forces.smk"
 
 
+# set some rules to run locally
+localrules: build_freesasa, build_openmm, build_promod
+
+
 # main rules 
 
 rule get_freesasa:
