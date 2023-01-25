@@ -10,7 +10,7 @@ rule build_openmm:
     output:
         "containers/openmm.sif"
     shell:
-        "singularity build {output} {input}"
+        "apptainer build {output} {input}"
 
 ### EVALUATION RULES ###
 
@@ -37,5 +37,5 @@ rule evaluate_openmm_ff2:
         "containers/openmm.sif"
     shell:
         """
-        covid-lt/bin/pdb_openmm_minimize {input.structure} --forcefield {wildcards.ff1}.xml --forcefield {wildcards.ff2}.xml --max-iterations 0 --print-forces > {output}
+        covid-lt/bin/pdb_openmm_minimize {input.structure} --forcefield {wildcards.ff1}.xml --forcefield {wildcards.ff2}.xml --max-iterations 0 --print-forces #> {output}
         """

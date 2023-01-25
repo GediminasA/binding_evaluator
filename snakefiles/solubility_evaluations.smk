@@ -5,7 +5,7 @@ rule build_freesasa:
     output:
         "containers/freesas.sif"
     shell:
-        "singularity build {output} {input}"
+        "apptainer build {output} {input}"
 
 
 

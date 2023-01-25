@@ -1,4 +1,18 @@
 import os
+### CONTAINER BUILDING RULES ###
+
+rule build_promod:
+    input:
+        "containers/promod.def"
+    output:
+        "containers/promod.sif"
+    shell:
+        "apptainer build {output} {input}"
+
+
+
+
+### EVALUATION RULES ###
 
 
 
