@@ -36,6 +36,55 @@ rule download_pdb:
             pdb_fetch {params.stem} > {output}
         """
 
+rule download_swiss_prot_db:
+    params:
+        link = "https://ftp.ncbi.nlm.nih.gov/blast/db/v5/swissprot.tar.gz",
+        diro = "data/blast/swiss_prot",
+        archive = "swiss.tar.gz",
+    output:
+        swissdb = "data/blast/swiss_prot/swissprot.pin"
+    shell:
+        """
+            mkdir -p {params.diro}
+            wget {params.link} -O {params.diro}/{params.archive}
+            cd {params.diro}
+            tar xvzf {params.archive}
+        """
+
+rule extract_seqs_initial:
+    input:
+        pdbproc_dir+"/pristine/{stem}.pdb"
+    output:
+        work_dir+"/initial_cleanup/{stem,[^_]+}.fasta"
+    params:
+        path = "covid-lt/"
+    notebook:
+        "notebook/extract_pdbsequence.py.ipynb"
+
+#to fix seqres entries with Z letters and alike
+rule search_against_swiss_prpt:
+    input:
+        db = "data/blast/swiss_prot/swissprot.pin",
+        match = work_dir+"/initial_cleanup/{stem}.fasta"
+    output:
+        work_dir+"/initial_cleanup/{stem,[^_]+}_swissmatch.txt"
+    params:
+        db = "data/blast/swiss_prot/swissprot"
+    threads: 2
+    shell:
+        """
+            blastp -query {input.match} -db {params.db} -num_threads  {threads}\
+            -out {output} -outfmt "6 evalue pident qseqid sseqid qseq sseq"
+
+        """
+rule t4t:
+    input:
+        expand(
+            work_dir+"/initial_cleanup/{stem}_swissmatch.txt",
+            stem=["4CPA"])
+
+
+
 
 rule renumber_against_seqres:
     input:
@@ -48,6 +97,7 @@ rule renumber_against_seqres:
         """
         PYTHONPATH=covid-lt covid-lt/bin/pdb_align {input} 1> {output} 2> {log}
         """ 
+
 
 rule fix_with_promod:
     input:
@@ -62,6 +112,7 @@ rule fix_with_promod:
         """
         PYTHONPATH=covid-lt covid-lt/bin/promod-fix-pdb {input[0]} 1> {output} 2> {log}
         """ 
+
 
 rule pdb2pqr:
     input:
@@ -136,6 +187,8 @@ rule search4antibodies:
         """
         hmmscan --tblout {output}  --noali   {params.hmm} {input} &> {log.out}
         """
+
+
 
 rule determine_interacting_groups:
     input:
