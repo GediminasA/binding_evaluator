@@ -30,11 +30,17 @@ rule download_pdb:
         #config["structures_folder"]+"/{stem}.pdb"
     params:
         stem = "{stem}"
-    container: None 
-    shell:
-        """
-            pdb_fetch {params.stem} > {output}
-        """
+    params:
+        localdb = config["structures_folder"]
+    run:
+        local = config["structures_folder"]+"/"+wildcards.stem+".pdb"
+        print(local)
+        if os.path.exists(local):
+            print(f"copying file {local} to {output}")
+            shell("cp {local} {output}")
+        else:
+            print(f"downloading file {local} to {output}")
+            shell("pdb_fetch {params.stem} > {output}")
 
 rule download_swiss_prot_db:
     params:
@@ -55,14 +61,26 @@ rule extract_seqs_initial:
     input:
         pdbproc_dir+"/pristine/{stem}.pdb"
     output:
-        work_dir+"/initial_cleanup/{stem,[^_]+}.fasta"
+        fasta = work_dir+"/initial_cleanup/{stem,[^_]+}.fasta",
+        pdb = work_dir+"/initial_cleanup/{stem,[^_]+}_woHetinSeqres.pdb"
     params:
         path = "covid-lt/"
-    notebook:
-        "notebook/extract_pdbsequence.py.ipynb"
+    # notebook:
+    #     "notebooks/extract_pdbsequence.py.ipynb"
+    script: 
+      "notebooks/extract_pdbsequence.py.py"
 
+rule extract_seqs_pristine:
+    input:
+        pdbproc_dir+"/pristine/{stem}.pdb"
+    output:
+        pdbproc_dir+"/pristine/{stem,[^_]+}_info.txt"
+    shell: 
+      """
+        pdb_wc  {input} > {output}
+      """
 #to fix seqres entries with Z letters and alike
-rule search_against_swiss_prpt:
+rule search_against_swiss_prot:
     input:
         db = "data/blast/swiss_prot/swissprot.pin",
         match = work_dir+"/initial_cleanup/{stem}.fasta"
@@ -74,21 +92,43 @@ rule search_against_swiss_prpt:
     shell:
         """
             blastp -query {input.match} -db {params.db} -num_threads  {threads}\
-            -out {output} -outfmt "6 evalue pident qseqid sseqid qseq sseq"
+            -out {output} -outfmt "6 evalue pident qstart qend qseqid sseqid qseq sseq"
 
         """
+
+rule fix_ambiquous_positions:
+    input:
+        swiss = work_dir+"/initial_cleanup/{stem}_swissmatch.txt",
+        pdb = work_dir+"/initial_cleanup/{stem,[^_]+}_woHetinSeqres.pdb"
+    output:
+        work_dir+"/initial_cleanup/{stem,[^_]+}_noambi.pdb"
+    log:
+        work_dir+"/initial_cleanup/{stem,[^_]+}_noambi.log"
+    params:
+        path = "covid-lt/"
+    #notebook:
+    #   "notebooks/fix_ambi.py.ipynb"
+    script:
+        "notebooks/fix_ambi.py.py"
+
 rule t4t:
     input:
         expand(
-            work_dir+"/initial_cleanup/{stem}_swissmatch.txt",
-            stem=["4CPA"])
+            #pdbproc_dir+"/pristine/{stem}_info.txt",
+            #work_dir+"/processed/{stem}.pdb",
+            work_dir+"/processed_info/{stem}_interactigGroups.tsv",
+            #work_dir+"/initial_cleanup/{stem}_noambi.pdb",
+            #work_dir+"/initial_cleanup/{stem}_swissmatch.txt",
+            stem=pdb_stems)
+            #stem=["4CPA"])
 
 
 
 
 rule renumber_against_seqres:
     input:
-        pdbproc_dir  + "/pristine/{stem}.pdb"
+        work_dir+"/initial_cleanup/{stem}_noambi.pdb",
+        #pdbproc_dir  + "/pristine/{stem}.pdb"
     output:
         pdbproc_dir + "/process/{stem,[^_]+}_seqresMatched.pdb"
     log:
@@ -110,7 +150,7 @@ rule fix_with_promod:
     container: "containers/promod.sif"
     shell:
         """
-        PYTHONPATH=covid-lt covid-lt/bin/promod-fix-pdb {input[0]} 1> {output} 2> {log}
+        PYTHONPATH=covid-lt covid-lt/bin/promod-fix-pdb --trim {input[0]} 1> {output} 2> {log}
         """ 
 
 
@@ -118,23 +158,65 @@ rule pdb2pqr:
     input:
         "{stem}.pdb"
     output:
-        pdb = "{stem}_pdb2pqr.pdb",
-        pqr = "{stem}_pdb2pqr.pqr"
+        pqr = "{stem}_pdb2pqr.pqr",
+        pdb = "{stem}_pdb2pqr.pdb"
+    params:
+        pdb = "{stem}_pdb2pqrWOseqres.pdb",
     log:
         "{stem}_pdb2pqr.log",
     shell:
         """
-        pdb2pqr30 --drop-water  {input} {output.pqr}  --pdb-output {output.pdb} &> {log}
+        grep -e "^SEQRES" {input} > {output.pdb}
+        pdb2pqr30 --drop-water --include-header  {input} {output.pqr}  --pdb-output {params.pdb} &> {log}
+        cat {params.pdb} >> {output.pdb}
+        rm {params.pdb}
         """
 
+rule removeHOH:
+    input:
+        "{stem}.pdb"
+    output:
+        pdb = "{stem}_woHOH.pdb",
+    shell:
+        """
+            pdb_delresname -HOH {input} > {output}
+        """
+
+rule removeHET:
+    input:
+        "{stem}.pdb"
+    output:
+        pdb = "{stem}_woHET.pdb",
+    shell:
+        """
+            pdb_delhetatm {input} > {output}
+        """
+
+rule removeH:
+    input:
+        "{stem}.pdb"
+    output:
+        pdb = "{stem}_woH.pdb",
+    shell:
+        """
+            pdb_delelem -H {input} > {output}
+        """
+ 
 rule pdb_fix:
     input:
         "{stem}.pdb"
     output:
-        "{stem}_pdbfix.pdb"
+        pdb = "{stem}_pdbfix.pdb"
+    threads: 4
+    params:
+        pdb = "{stem}_pdbfix_tmp.pdb"
     shell:
         """
-        pdbfixer {input} --output {output} --add-residues
+        grep -e "^SEQRES" {input} > {output.pdb}
+        export OPENMM_CPU_THREADS={threads}
+        pdbfixer {input} --replace-nonstandard --add-atoms=heavy --add-residues --output={params.pdb}
+        cat {params.pdb} >> {output.pdb}
+        rm {params.pdb}
         """
 
 rule copy_alreadyprepared4fix:
@@ -155,7 +237,8 @@ rule copy_alreadyprepared:
 
 rule copy_prepared:
         input:
-            pdbproc_dir + "/process/{stem}_seqresMatched_promod_pdb2pqr_pdbfix.pdb"
+            pdbproc_dir + "/process/{stem}_seqresMatched_woHOH_pdbfix.pdb"
+            #pdbproc_dir + "/process/{stem}_seqresMatched_woHOH_pdbfix_promod.pdb"
         output:
             work_dir+"/processed/{stem,[^_]+}.pdb"
         shell:
@@ -167,7 +250,7 @@ ruleorder:  copy_alreadyprepared > copy_prepared
 
 rule extract_seqs:
     input:
-        work_dir+"/processed/{stem}.pdb"
+        work_dir+"/processed/{stem}_woHET.pdb"
     output:
         work_dir+"/processed_info/{stem,[^_]+}.fasta"
     shell:
@@ -196,6 +279,8 @@ rule determine_interacting_groups:
         fa = work_dir+"/processed_info/{stem,[^_]+}.fasta"
     output:
         work_dir+"/processed_info/{stem,[^_]+}_interactigGroups.tsv"
+    params:
+        predefined = "data/binding_partners.csv"
     threads: 2
     notebook:
         "notebooks/detect_interactors.r.ipynb"
