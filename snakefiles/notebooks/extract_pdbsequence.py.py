@@ -81,7 +81,15 @@ def generate_atom_line(fields):
     str
         The generated ATOM/HETATM line.
     """
-    format_string = "{:<6}{:>5}  {:<3}{:1}{:<3} {:1}{:>4}{:1}   {:>8.3f}{:>8.3f}{:>8.3f}{:>6.2f}{:>6.2f}          {:>2}{:>2}"
+    #format_string = "{:<6}{:>5}  {:<3}{:1}{:<3} {:1}{:>4}{:1}   {:>8.3f}{:>8.3f}{:>8.3f}{:>6.2f}{:>6.2f}          {:>2}{:>2}"
+    
+    format_string = "{:<6}{:>5} {:^4}{:1}{:<3} {:1}{:>4}{:1}   {:>8.3f}{:>8.3f}{:>8.3f}{:>6.2f}{:>6.2f}          {:>2}{:>2}"
+    if len(fields['atom_name']) == 1:
+        format_string = "{:<6}{:>5} {:^4}{:1}{:<3} {:1}{:>4}{:1}   {:>8.3f}{:>8.3f}{:>8.3f}{:>6.2f}{:>6.2f}          {:>2}{:>2}"
+    if len(fields['atom_name']) == 3:
+        format_string = "{:<6}{:>5} {:>4}{:1}{:<3} {:1}{:>4}{:1}   {:>8.3f}{:>8.3f}{:>8.3f}{:>6.2f}{:>6.2f}          {:>2}{:>2}"
+
+        
     args = (
         fields['record_name'],
         fields['atom_number'],
@@ -103,6 +111,15 @@ def generate_atom_line(fields):
 
 
 
+# for l in PDBFile(snakemake.input[0]).content:
+#     if l[0:5].find("ATOM") > -1 or l[0:5].find("HETA") > -1:  
+#         f = parse_atom_line(l)
+#         l=l.replace("\n","")
+#         l2 = generate_atom_line(f)
+#         if l != l2:
+#                 print(f"|{l}|")
+#                 print(f"|{l2}|")
+#                 print("--")
 
 
 # In[5]:
@@ -148,23 +165,28 @@ for chain in pdb:
         if not (var3L in hets):
             ct += 1
             out.append(var3L)
+            #print(var3L, ct)
             if ct  == 13:
                 outl = " ".join(out)
                 out_laines.append(outl)
+                #print("AAA",outl)
                 out=[]
                 ct = 0
         else:
             hets4unchain.append((var3L,chain.name))
-        outl = " ".join(out)
-        out_laines.append(outl)
-        out_laines_with_prefixes = []
-        ct = 0
-        nch = len(seqres_seq)
-        ctl = 0
-        for l in out_laines:
-            if len(l) > 0:
-                ctl += 1
-                ll = "SEQRES "+str(ctl).rjust(3)+chain.name.rjust(2)+" "+str(nch).rjust(4)+"  "+l
+        #print(out_laines)
+        
+    outl = " ".join(out)
+    out_laines.append(outl)
+    out_laines_with_prefixes = []
+    ct = 0
+    nch = len(seqres_seq)
+    ctl = 0
+    for l in out_laines:
+        if len(l) > 0:
+            ctl += 1
+            ll = "SEQRES "+str(ctl).rjust(3)+chain.name.rjust(2)+" "+str(nch).rjust(4)+"  "+l
+            SEQRES_updated += ll+"\n"
 hets4unchain = list(set(hets4unchain))
 
 
@@ -176,14 +198,18 @@ for i in range(0,len(Afields)):
     fields = Afields[i]
     chain_id = fields["chain_id"]
     res_name = fields["res_name"]
+    #mark hetatoms that shoulc be removed - that was part of seqres
     if (res_name, chain_id) in hets4unchain:
-        fields['res_name'] = ' '
-# regenerate lines
+        fields['res_name'] = 'BAAAD'
+    #remove chain assaignments for  all hetatoms
+    if fields["record_name"] == 'HETATM':
+        fields["chain_id"] = ' ' 
 ATOM_lines = []
 for i in range(0,len(Afields)):
     fields = Afields[i]
-    l = generate_atom_line(fields)
-    ATOM_lines.append(l)
+    if fields['res_name'] != 'BAAAD':
+        l = generate_atom_line(fields)
+        ATOM_lines.append(l)
 
 
 # In[9]:
@@ -226,4 +252,10 @@ for chain in pdb:
         
 with open(snakemake.output.fasta,"w") as fo:
     fo.write("\n".join(out))
+
+
+# In[ ]:
+
+
+
 
