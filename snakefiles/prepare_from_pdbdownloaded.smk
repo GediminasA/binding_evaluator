@@ -65,10 +65,10 @@ rule extract_seqs_initial:
         pdb = work_dir+"/initial_cleanup/{stem,[^_]+}_woHetinSeqres.pdb"
     params:
         path = "covid-lt/"
-    # notebook:
-    #     "notebooks/extract_pdbsequence.py.ipynb"
-    script: 
-      "notebooks/extract_pdbsequence.py.py"
+    notebook:
+         "notebooks/extract_pdbsequence.py.ipynb"
+    #script: 
+    #  "notebooks/extract_pdbsequence.py.py"
 
 rule extract_seqs_pristine:
     input:
@@ -106,17 +106,18 @@ rule fix_ambiquous_positions:
         work_dir+"/initial_cleanup/{stem,[^_]+}_noambi.log"
     params:
         path = "covid-lt/"
-    #notebook:
-    #   "notebooks/fix_ambi.py.ipynb"
-    script:
-        "notebooks/fix_ambi.py.py"
+    notebook:
+       "notebooks/fix_ambi.py.ipynb"
+    #script:
+    #    "notebooks/fix_ambi.py.py"
 
 rule t4t:
     input:
         expand(
             #pdbproc_dir+"/pristine/{stem}_info.txt",
             #work_dir+"/processed/{stem}.pdb",
-            work_dir+"/processed_info/{stem}_interactigGroups.tsv",
+            work_dir+"/static/splits/{stem}_0_part1.pdb",
+            #work_dir+"/processed_info/{stem}_interactigGroups.tsv",
             #work_dir+"/initial_cleanup/{stem}_noambi.pdb",
             #work_dir+"/initial_cleanup/{stem}_swissmatch.txt",
             stem=pdb_stems)
@@ -148,8 +149,10 @@ rule fix_with_promod:
     log:
         "{stem}_promod.log"
     container: "containers/promod.sif"
+    threads: 1000
     shell:
         """
+        export OPENMM_CPU_THREADS={threads}
         PYTHONPATH=covid-lt covid-lt/bin/promod-fix-pdb --trim {input[0]} 1> {output} 2> {log}
         """ 
 
@@ -207,7 +210,7 @@ rule pdb_fix:
         "{stem}.pdb"
     output:
         pdb = "{stem}_pdbfix.pdb"
-    threads: 4
+    threads: 24
     params:
         pdb = "{stem}_pdbfix_tmp.pdb"
     shell:
@@ -229,7 +232,7 @@ rule copy_alreadyprepared4fix:
 
 rule copy_alreadyprepared:
         input:
-            work_dir+"/process_provided/{stem}_pdb2pqr_pdbfix.pdb"
+            work_dir+"/process_provided/{stem}_pdb2pqr.pdb"
         output:
             work_dir+"/processed/{stem,[^_]+}.pdb"
         shell:
@@ -237,14 +240,14 @@ rule copy_alreadyprepared:
 
 rule copy_prepared:
         input:
-            pdbproc_dir + "/process/{stem}_seqresMatched_woHOH_pdbfix.pdb"
+            pdbproc_dir + "/process/{stem}_seqresMatched_woHOH_pdbfix_pdb2pqr_promod.pdb"
             #pdbproc_dir + "/process/{stem}_seqresMatched_woHOH_pdbfix_promod.pdb"
         output:
             work_dir+"/processed/{stem,[^_]+}.pdb"
         shell:
             "cp {input} {output}"
 
-ruleorder:  copy_alreadyprepared > copy_prepared
+#ruleorder:  copy_alreadyprepared > copy_prepared
 
 #extract fasta files and run hhblitz to identify antibodies
 
