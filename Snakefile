@@ -18,6 +18,8 @@ include: "snakefiles/rosetta_binding_evaluation.smk"
 include: "snakefiles/solubility_evaluations.smk"
 # openmm forces
 include: "snakefiles/openmm_forces.smk"
+# mutation generation entry point and utilities
+include: "snakefiles/prepare_mutatants_modeling.smk"
 
 
 # set some rules to run locally

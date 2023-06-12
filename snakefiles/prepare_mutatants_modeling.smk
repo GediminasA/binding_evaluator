@@ -1,0 +1,2 @@
+print("AAA")
+sys.exit()
