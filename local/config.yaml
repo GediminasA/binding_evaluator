@@ -1,0 +1,10 @@
+cores: 12
+latency-wait: 60
+jobs: 100
+keep-going: True
+rerun-incomplete: True
+printshellcmds: True
+scheduler: greedy
+conda-frontend: mamba
+use-conda: True
+use-singularity: True

@@ -1,3 +1,4 @@
+git lfs pull
 snakemake  --profile simple  --configfile configs/prodigy.yaml -f t4t   -c 1 
 snakemake  --profile simple  --configfile configs/prodigy.yaml -f  prodigy_run/pdb_proc/process/1WEJ_seqresMatched.pdb -c 1
 snakemake  --profile local  --configfile configs/prodigy.yaml -f  prodigy_test
