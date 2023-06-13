@@ -1,36 +1,33 @@
+name: binding_evaluator
 channels:
-  - defaults
   - conda-forge
   - bioconda
 dependencies:
-  - python=3.10
-  - biopython
-  - snakemake=7.15.2
-  - apptainer
-  - hmmer=3.3.2
-  - jupyterlab=3.4.8
-  - r-irkernel=1.3
-  - r-base=4.1.3
+  - r-base=4.2.0
+  - r-lubridate
+  - r-tidyverse
+  - r-irkernel
   - r-data.table
   - r-dplyr
   - r-stringr
-  - r-seqinr
-  - pdbfixer
-  - pdb2pqr
-  - openmm
+  - r-seqinr=4.2_30
+  - python=3.10
+  - biopython
+  - snakemake=7.25.0
   - pip
+  - pdb2pqr
+  - jupyterlab=3.4.8
+  - apptainer
+  - hmmer=3.3.2
+  - blast
+  - openmm
+  - pdbfixer
   - ca-certificates
   - certifi
   - openssl
-  - screen
   - git-lfs
-  - blast
-  - tmux
-  - r-lubridate
-  - r-tidyverse
   - squashfs-tools
-  - ncdu
- - pip:
+  - pip:
     - git+https://github.com/haddocking/prodigy.git
     - pdb-tools
 

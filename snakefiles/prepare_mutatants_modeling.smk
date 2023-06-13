@@ -1,2 +1,0 @@
-print("AAA")
-sys.exit()
