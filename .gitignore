@@ -3,3 +3,4 @@ container.simg
 obsolete
 .snakemake/*
 .snakemake
+data/blast/*
