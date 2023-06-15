@@ -2,6 +2,7 @@ library(data.table)
 library(dplyr)
 library(tidyr)
 library(stringr)
+options(warn=-1)
 
 dfmap <- fread (snakemake@input$map_s_p)
 
@@ -27,12 +28,15 @@ df3 <- df2 %>%
     filter(!is.na(POSITION_PDB)) %>%
     #where deletions are - sbstityue to alanine
     mutate(SUB = ifelse(SUB=='-',"A",SUB)) %>%
-    mutate(MutationPDB = paste(WT,POSITION_PDB,SUB,sep=""))
+    mutate(MutationPDB = paste(WT,POSITION_PDB,SUB,sep="")) %>%
+    mutate(MutationPDBwChain = paste(WT,chain,POSITION_PDB,SUB,sep=""))
+    
 df4 <- df3 %>%
     group_by(ID) %>%
     summarise(
         Mutation=paste(Mutation, collapse=","),
         MutationPDB=paste(MutationPDB, collapse=","),
+        MutationPDBwChain=paste(MutationPDBwChain, collapse=","),
         Template = first(Template),
         PDB = first(PDB)
         
@@ -45,7 +49,7 @@ dfhap <- df2 %>%
 df4 <- df4 %>%
     left_join(dfhap, by=c("ID")) %>%
     mutate(CHAIN=chain) %>%
-    group_by(Mutation,MutationPDB,Template,PDB,CHAIN) %>%
+    group_by(Mutation,MutationPDB,MutationPDBwChain,Template,PDB,CHAIN) %>%
     summarise(Haplotype=paste(Haplotype, collapse="|")) %>%
     ungroup()
 fwrite(x = df4,file = snakemake@output[[1]])

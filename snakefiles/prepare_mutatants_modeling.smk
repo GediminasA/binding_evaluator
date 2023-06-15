@@ -81,6 +81,57 @@ rule get_template_mutation_data:
     script:
         "notebooks/get_template_mutation_data.r.R"   
 
+#### rules to run EVOEF modelling
+
+#use checkpoint is used as a prtiori number ofstructure that must be modelled is not known, mostly due to variable sequence length available in PDBs
+checkpoint create_idividual_tasks_4_modeling_with_EVOEF:
+    input:
+        mutrez + "/mutations_data_4EVOEFmodels.csv",
+    output:
+        directory(work_dir + "/mutants_structure_generation/EVOEF/todoList") # writes out small text file for each mutants to be generated
+    notebook:
+        "notebooks/create_idividual_tasks_4_modeling_with_EVOEF.py.ipynb"
 
 
+def aggregate_EVOEF_results(wildcards):
+    checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_EVOEF.get(**wildcards).output[0]
+    stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
+    print(stems)
+    return(expand(work_dir + "/mutants_structure_generation/EVOEF/structures/{stem}.pdb",stem=stems))
 
+rule run_evoEF1_modelling:
+    input:
+        container = "containers/evoef1.sif", # to make sure it is built
+        pdb = work_dir+"/processed/{pdb}.pdb",
+        mutant_file = work_dir + "/mutants_structure_generation/EVOEF/todoList/{pdb}={chain}={mutations}"
+    params:
+        pdb = os.path.abspath(work_dir+"/processed/{pdb}.pdb"),
+        mutant_file = os.path.abspath(work_dir + "/mutants_structure_generation/EVOEF/todoList/{pdb}={chain}={mutations}"),
+        wdir = work_dir + "/mutants_structure_generation/EVOEF/structures/{pdb}={chain}={mutations}",
+        num_of_runs = 10,
+        outmut = work_dir + "/mutants_structure_generation/EVOEF/structures/{pdb}={chain}={mutations}/{pdb}_Model_0001.pdb",
+        outwt = work_dir + "/mutants_structure_generation/EVOEF/structures/{pdb}={chain}={mutations}/{pdb}_Model_0001_WT.pdb"
+
+    output:
+        mut = work_dir + "/mutants_structure_generation/EVOEF/structures/{pdb}={chain}={mutations}.pdb",
+        wt = work_dir + "/mutants_structure_generation/EVOEF/structures/{pdb}={chain}={mutations}=WT.pdb"
+    log:
+        os.path.abspath(work_dir + "/mutants_structure_generation/EVOEF/structures/{pdb}={chain}={mutations}.log")
+    singularity:
+        "containers/evoef1.sif"
+    shell:
+        """
+            startD=`pwd`
+            echo {params.pdb}
+            mkdir -p {params.wdir}
+            cd {params.wdir}
+            /EvoEF-master/EvoEF  --command=BuildMutant   --pdb {params.pdb} --num_of_runs {params.num_of_runs} --mutant_file {params.mutant_file} > {log} 
+            cd $startD
+            mv {params.outmut} {output.mut}
+            mv {params.outwt} {output.wt}
+
+        """
+rule test4:
+    input: aggregate_EVOEF_results
+
+        

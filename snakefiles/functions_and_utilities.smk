@@ -5,7 +5,7 @@ rule singularity_container:
     output:
         "{container}.sif"
     shell:
-        "singularity  build  {output} {input}"
+        "apptainer  build  {output} {input}"
 
 
 
