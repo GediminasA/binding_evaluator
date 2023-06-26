@@ -18,14 +18,14 @@ rule mutants_targets:
             work_dir+"/mutants_sequence_generation/{stem}_vs_templates_blastp.txt",
             stem=pdb_template_stems),
         pdb_templates_map = expand(
-            work_dir+"/mutants_sequence_generation/{pair}.csv",
+            work_dir+"/mutants_sequence_generation/{pair}.csv", #map input seq to pdb map 
             pair = pair4mut),
         pdb_tempplate_mutation_data = expand(
             work_dir+"/mutants_sequence_generation/{pair}=template_mutation_data__EVOEF.csv",
             pair = pair4mut),
-        pdb_tempplate_mutation_data_hap = expand(
-            work_dir+"/mutants_sequence_generation/{pair}=template_mutation_data__cleanhap.csv",
-            pair = pair4mut)
+        # pdb_tempplate_mutation_data_hap = expand(
+        #     work_dir+"/mutants_sequence_generation/{pair}=template_mutation_data__cleanhap.csv",
+        #     pair = pair4mut)
         
 
 rule collect_data_befor_modelling:
@@ -76,10 +76,10 @@ rule get_template_mutation_data:
     output:
         work_dir+"/mutants_sequence_generation/{pdb,[^=]+}={seqtempl,[^=]+}=template_mutation_data__EVOEF.csv",
         work_dir+"/mutants_sequence_generation/{pdb,[^=]+}={seqtempl,[^=]+}=template_mutation_data__cleanhap.csv"
-    # notebook:
-    #    "notebooks/get_template_mutation_data.r.ipynb"   
-    script:
-        "notebooks/get_template_mutation_data.r.R"   
+    notebook:
+       "notebooks/get_template_mutation_data.r.ipynb"   
+    # script:
+    #     "notebooks/get_template_mutation_data.r.R"   
 
 #### rules to run EVOEF modelling
 
