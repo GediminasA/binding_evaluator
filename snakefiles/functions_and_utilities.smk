@@ -20,6 +20,17 @@ def get_interacting_chains(precalculated_data):
     out_str = " ".join(out)
     return(main_chain,list(out))
     
+def get_interacting_chains4evoEF1(wildcards):
+    precalculated_data = work_dir+f"/processed_info/{wildcards.pdb}_interactigGroups.tsv"
+    data = open(precalculated_data,"r").readlines()[0].replace("\n","").split("\t")
+    data = [l.split(',') for l in data]
+    data = [data[0],data[1]]
+    data = sorted(data, key=lambda l: (len(l)),reverse=False)
+    main_chain = data[0]
+    out = data[1]
+    out_str = " ".join(out)
+    return(f"{''.join(main_chain)},{''.join(list(out))}")
+
 def get_interacting_chainsv1(pdbf,main_chain):
     from Bio import PDB as pdb
     ids = list()

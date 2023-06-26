@@ -23,9 +23,7 @@ rule mutants_targets:
         pdb_tempplate_mutation_data = expand(
             work_dir+"/mutants_sequence_generation/{pair}=template_mutation_data__EVOEF.csv",
             pair = pair4mut),
-        # pdb_tempplate_mutation_data_hap = expand(
-        #     work_dir+"/mutants_sequence_generation/{pair}=template_mutation_data__cleanhap.csv",
-        #     pair = pair4mut)
+        ddg_results = mutrez + "/mutations_data_4EVOEFmodels_results.csv"
         
 
 rule collect_data_befor_modelling:
@@ -76,10 +74,10 @@ rule get_template_mutation_data:
     output:
         work_dir+"/mutants_sequence_generation/{pdb,[^=]+}={seqtempl,[^=]+}=template_mutation_data__EVOEF.csv",
         work_dir+"/mutants_sequence_generation/{pdb,[^=]+}={seqtempl,[^=]+}=template_mutation_data__cleanhap.csv"
-    notebook:
-       "notebooks/get_template_mutation_data.r.ipynb"   
-    # script:
-    #     "notebooks/get_template_mutation_data.r.R"   
+    # notebook:
+    #    "notebooks/get_template_mutation_data.r.ipynb"   
+    script:
+        "notebooks/get_template_mutation_data.r.R"   
 
 #### rules to run EVOEF modelling
 
@@ -97,7 +95,8 @@ def aggregate_EVOEF_results(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_EVOEF.get(**wildcards).output[0]
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     print(stems)
-    return(expand(work_dir + "/mutants_structure_generation/EVOEF/structures/{stem}.pdb",stem=stems))
+    return(expand(work_dir + "/mutants_structure_scoring/EVOEF/scores/{stem}.ddg",stem=stems))
+    #return(expand(work_dir + "/mutants_structure_scoring/EVOEF/scores/{stem}.sc",stem=stems))
 
 rule run_evoEF1_modelling:
     input:
@@ -131,7 +130,58 @@ rule run_evoEF1_modelling:
             mv {params.outwt} {output.wt}
 
         """
-rule test4:
-    input: aggregate_EVOEF_results
+
+
+rule run_evoEF1_eval:
+    input:
+        mut = work_dir + "/mutants_structure_generation/EVOEF/structures/{pdb}={chain}={mutations}.pdb",
+        wt = work_dir + "/mutants_structure_generation/EVOEF/structures/{pdb}={chain}={mutations}=WT.pdb",
+        interacting_groups = work_dir+"/processed_info/{pdb,[^_]+}_interactigGroups.tsv"
+    output:
+        mut = work_dir + "/mutants_structure_scoring/EVOEF/scores/{pdb}={chain}={mutations}.sc",
+        wt = work_dir + "/mutants_structure_scoring/EVOEF/scores/{pdb}={chain}={mutations}=WT.sc",
+    params:
+        mut = os.path.abspath(work_dir + "/mutants_structure_generation/EVOEF/structures/{pdb}={chain}={mutations}.pdb"),
+        wt = os.path.abspath(work_dir + "/mutants_structure_generation/EVOEF/structures/{pdb}={chain}={mutations}=WT.pdb"),
+        wdir = work_dir + "/mutants_structure_scoring/EVOEF/scores/{pdb}={chain}={mutations}",
+        num_of_runs = 10,
+        part1_part2 = get_interacting_chains4evoEF1
+    singularity:
+        "containers/evoef1.sif"
+    shell:
+        """
+            /EvoEF-master/EvoEF --command=ComputeBinding --pdb  {params.mut} --split  {params.part1_part2} > {output.mut}  
+            /EvoEF-master/EvoEF --command=ComputeBinding --pdb  {params.wt} --split  {params.part1_part2} > {output.wt}  
+
+        """
+    #log:
+    #    os.path.abspath(work_dir + "/mutants_structure_generation/EVOEF/structures/{pdb}={chain}={mutations}.log")
+
+
+rule run_evoEF1_eval_substract:
+    input:
+        mut = work_dir + "/mutants_structure_scoring/EVOEF/scores/{pdb}={chain}={mutations}.sc",
+        wt = work_dir + "/mutants_structure_scoring/EVOEF/scores/{pdb}={chain}={mutations}=WT.sc",
+    output:
+        mut = work_dir + "/mutants_structure_scoring/EVOEF/scores/{pdb}={chain}={mutations}.ddg",
+    script:
+        "notebooks/substract_evoef1.r.R"
+    #notebook:
+    #    "notebooks/substract_evoef1.r.ipynb"
+
+
+rule run_evoEF1_eval_summary:
+    input:
+        evoEF1_rez =  aggregate_EVOEF_results,
+        muation_data = mutrez + "/mutations_data_4EVOEFmodels.csv",
+    output:
+        muation_data = mutrez + "/mutations_data_4EVOEFmodels_results.csv",
+    #notebook:
+    #    "notebooks/collect_evoef1_results.r.ipynb"
+    script:
+        "notebooks/collect_evoef1_results.r.R"
+
+
+
 
         
