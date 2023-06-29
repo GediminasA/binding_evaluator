@@ -40,4 +40,3 @@ rule parse_prodigy:
         id= "{stem}",
     notebook:
         "notebooks/parse_prodigy.r.ipynb"
-

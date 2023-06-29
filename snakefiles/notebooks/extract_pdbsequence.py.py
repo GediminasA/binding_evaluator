@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[ ]:
 
 
 from Bio import PDB, SeqIO, pairwise2
@@ -13,9 +13,11 @@ import sys
 from Bio.Data.IUPACData import protein_letters_3to1_extended
 from Bio.Data.IUPACData import protein_letters_3to1
 from Bio.pairwise2 import format_alignment
+from Bio.Seq import MutableSeq
+from Bio.Align import substitution_matrices
 
 
-# In[3]:
+# In[ ]:
 
 
 kext = list(protein_letters_3to1_extended.keys())
@@ -31,7 +33,7 @@ for k in protein_letters_3to1_extended:
    
 
 
-# In[4]:
+# In[ ]:
 
 
 def parse_atom_line(line):
@@ -122,7 +124,7 @@ def generate_atom_line(fields):
 #                 print("--")
 
 
-# In[5]:
+# In[ ]:
 
 
 # read in PDB
@@ -136,7 +138,7 @@ for l in pdb.content:
     
 
 
-# In[6]:
+# In[ ]:
 
 
 #collect hetero residues
@@ -147,31 +149,87 @@ for a in Afields:
 hets = list(set([i.upper() for i in hets]))
 
 
-# In[7]:
+# In[ ]:
 
 
+matrix = substitution_matrices.load("BLOSUM62")
 SEQRES_updated = ""
 hets4unchain = [] # a tuple of resname and chain - for removal of heteroatoms
 for chain in pdb:
     seqres_seq, seqreq_seq_3L = chain.sequence_seqres(return_3L=True)
+    atom_seq = chain.sequence_atom()
+    
+    #check how many to keep at the ends
+    align = pairwise2.align.globalds(seqres_seq, atom_seq, matrix, -11, -1, penalize_end_gaps=(False, False),one_alignment_only=True)[0]
+    sequence = MutableSeq(align[0])
+    structure = MutableSeq(align[1])
+#     print(seqres_seq)
+#     print(atom_seq)
+#     print("---")
+#     print(sequence)
+#     print("---")
+#     print(structure)
+    #get position at the begining at seqres protruding no more than 1 residue at the N- terminus
+    lenaln = len(sequence)
+    posST = 0 # position structure
+    posSE = 0 # position sequence
+    startpos = 1
+    for ali in range(0,lenaln):
+        if sequence[ali]=='X':
+            sequence[ali]='-'
+        if structure[ali]=='X':
+            structure[ali]='-'
+    for ali in range(0,lenaln):
+        if sequence[ali] != '-':
+            posSE += 1
+        if structure[ali] != '-':
+            posST += 1
+        if posST == 1:
+            startpos = posSE
+            if startpos - 1  >= 1:
+                startpos = startpos - 1
+    seqlen_woG = len(str(sequence).replace('-',''))
+    strlen_woG = len(str(structure).replace('-',''))
+
+
+
+    # get the position at the end of seqres protruding no more than one residue at the C- terminus
+    endpos = seqlen_woG
+    posST = 0 # position structure
+    posSE = 0 # position sequence
+    for ali in range(0,lenaln):
+        if sequence[ali] != '-':
+            posSE += 1
+        if structure[ali] != '-':
+            posST += 1
+        if posST == strlen_woG:
+            endpos = posSE
+            if posSE + 1 <= seqlen_woG :
+                endpos = endpos + 1
+                
+    #check for hetero in sequences
     ct = 0
+    ctseqres = 0
     ctall = 0
+    ctaasymb = 0
     out_laines = []
     out = []
     for s in seqres_seq:
         ctall += 1
         var3L = seqreq_seq_3L[ctall-1].upper() 
-        
-        if not (var3L in hets):
-            ct += 1
-            out.append(var3L)
-            #print(var3L, ct)
-            if ct  == 13:
-                outl = " ".join(out)
-                out_laines.append(outl)
-                #print("AAA",outl)
-                out=[]
-                ct = 0
+        if s != 'X' and (not (var3L in hets)):
+            ctaasymb += 1
+            if ctaasymb >= startpos and ctaasymb <= endpos :
+                ctseqres += 1
+                ct += 1
+                out.append(var3L)
+                #print(var3L, ct)
+                if ct  == 13:
+                    outl = " ".join(out)
+                    out_laines.append(outl)
+                    #print("AAA",outl)
+                    out=[]
+                    ct = 0
         else:
             hets4unchain.append((var3L,chain.name))
         #print(out_laines)
@@ -185,12 +243,13 @@ for chain in pdb:
     for l in out_laines:
         if len(l) > 0:
             ctl += 1
-            ll = "SEQRES "+str(ctl).rjust(3)+chain.name.rjust(2)+" "+str(nch).rjust(4)+"  "+l
+            ll = "SEQRES "+str(ctl).rjust(3)+chain.name.rjust(2)+" "+str(ctseqres).rjust(4)+"  "+l
             SEQRES_updated += ll+"\n"
 hets4unchain = list(set(hets4unchain))
+print(hets4unchain)
 
 
-# In[8]:
+# In[ ]:
 
 
 #modify atom content
@@ -207,12 +266,12 @@ for i in range(0,len(Afields)):
 ATOM_lines = []
 for i in range(0,len(Afields)):
     fields = Afields[i]
+    l = generate_atom_line(fields)
     if fields['res_name'] != 'BAAAD':
-        l = generate_atom_line(fields)
         ATOM_lines.append(l)
 
 
-# In[9]:
+# In[ ]:
 
 
 #regenerate all
@@ -235,7 +294,7 @@ with open(snakemake.output.pdb,"w") as outF:
     outF.write(out)
 
 
-# In[10]:
+# In[ ]:
 
 
 pdb = PDBFile(snakemake.output.pdb)

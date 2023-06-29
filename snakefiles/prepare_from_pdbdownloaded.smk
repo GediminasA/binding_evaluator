@@ -65,10 +65,10 @@ rule extract_seqs_initial:
         pdb = work_dir+"/initial_cleanup/{stem,[^_]+}_woHetinSeqres.pdb"
     params:
         path = "covid-lt/"
-    notebook:
-         "notebooks/extract_pdbsequence.py.ipynb"
-    #script: 
-    #  "notebooks/extract_pdbsequence.py.py"
+    # notebook:
+    #      "notebooks/extract_pdbsequence.py.ipynb"
+    script: 
+     "notebooks/extract_pdbsequence.py.py"
 
 rule extract_seqs_pristine:
     input:

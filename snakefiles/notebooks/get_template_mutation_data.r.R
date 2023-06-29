@@ -1,8 +1,9 @@
-options(warn=-1, message = FALSE)
-library(data.table)
-library(dplyr)
-library(tidyr)
-library(stringr)
+shh <- suppressPackageStartupMessages
+options(warn=-4, message = FALSE)
+shh(library(data.table))
+shh(library(dplyr))
+shh(library(tidyr))
+shh(library(stringr))
 
 dfmap <- fread (snakemake@input$map_s_p)
 
@@ -28,10 +29,13 @@ df2 <- df2 %>%
 
 df3 <- df2 %>%
     filter(!is.na(POSITION_PDB)) %>%
-    #where deletions are - sbstityue to alanine
-    mutate(SUB = ifelse(SUB=='-',"A",SUB)) %>%
+    #where deletions are - sbstityue to alanine for methods like foldx or EVOEF
+    mutate(SUBalltypes  = SUB) %>%
+    mutate(SUB = ifelse(SUB=='-',"A",SUB)) %>% # for methods like foldX or EVOEF that cannot deal with deletions - use it
     mutate(MutationPDB = paste(WT,POSITION_PDB,SUB,sep="")) %>%
-    mutate(MutationPDBwChain = paste(WT,chain,POSITION_PDB,SUB,sep=""))
+    mutate(MutationPDBalltypes = paste(WT,POSITION_PDB,SUBalltypes,sep="")) %>% 
+    mutate(MutationPDBwChain = paste(WT,chain,POSITION_PDB,SUB,sep="")) %>%
+    mutate(MutationPDBalltypeswChain = paste(WT,chain,POSITION_PDB,SUBalltypes,sep=""))
 
 df4 <- df3 %>%
     group_by(ID) %>%
@@ -40,6 +44,8 @@ df4 <- df3 %>%
         MutationsID = first(MutationsID),
         MutationPDB=paste(MutationPDB, collapse=","),
         MutationPDBwChain=paste(MutationPDBwChain, collapse=","),
+        MutationPDBalltypes=paste(MutationPDBalltypes, collapse=","),
+        MutationPDBalltypeswChain=paste(MutationPDBalltypeswChain, collapse=","),
         Template = first(Template),
         PDB = first(PDB)   
     ) %>%
@@ -53,12 +59,24 @@ dfhap <- df2 %>%
 df4 <- df4 %>%
     left_join(dfhap, by=c("ID")) %>%
     mutate(CHAIN=chain) %>%
-    group_by(Mutations,MutationPDB,MutationPDBwChain,Template,PDB,CHAIN) %>%
+    group_by(Mutations,MutationPDB,MutationPDBwChain,MutationPDBalltypes,MutationPDBalltypeswChain,Template,PDB,CHAIN) %>%
     summarise(
         Haplotype=paste(Haplotype, collapse="|"),
         MutationsID=paste(MutationsID, collapse="|"),
     ) %>%
     ungroup()
+
+
+# add a wildtype
+df4wt <- df4
+df4wt[!is.na(df4wt)] <- NA 
+df4wt <- df4wt[1,]
+
+df4wt$PDB <- df4$PDB[[1]]
+df4wt$CHAIN <- df4$CHAIN[[1]]
+df4wt$Template <- df4$Template[[1]]
+df4wt$MutationsID <- "WT"
+df4 <- bind_rows(df4wt, df4)
 fwrite(x = df4,file = snakemake@output[[1]])
 
 # general info
@@ -69,4 +87,3 @@ dfhap <- df2 %>%
 df_withhap <- df %>%
     left_join(dfhap, by="ID")
 fwrite(x = df_withhap, file = snakemake@output[[2]])
-df_withhap

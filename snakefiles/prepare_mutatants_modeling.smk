@@ -6,7 +6,7 @@ seqs_4mutations = list(set([s.strip() for s in df_muts.Template]))
 pair4mut = ["=".join(l) for l in  list(set(list(zip([s.strip() for s in df_muts.PDB],[s.strip() for s in df_muts.Template]))))]
 mutrez = work_dir + "/rezults"
 
-rule mutants_targets:
+rule mutants_targets_EVOEF:
     input:
         pdb_templates = expand(
             work_dir+"/processed/{stem}.pdb",
@@ -21,7 +21,7 @@ rule mutants_targets:
             work_dir+"/mutants_sequence_generation/{pair}.csv", #map input seq to pdb map 
             pair = pair4mut),
         pdb_tempplate_mutation_data = expand(
-            work_dir+"/mutants_sequence_generation/{pair}=template_mutation_data__EVOEF.csv",
+            work_dir+"/mutants_sequence_generation/{pair}=template_mutation_data__4models.csv",
             pair = pair4mut),
         ddg_results = mutrez + "/mutations_data_4EVOEFmodels_results.csv"
         
@@ -32,11 +32,11 @@ rule collect_data_befor_modelling:
             work_dir+"/mutants_sequence_generation/{pair}=template_mutation_data__cleanhap.csv",
             pair = pair4mut),
         evoef_data = expand(
-            work_dir+"/mutants_sequence_generation/{pair}=template_mutation_data__EVOEF.csv",
+            work_dir+"/mutants_sequence_generation/{pair}=template_mutation_data__4models.csv",
             pair = pair4mut)
     output:
         cleaned_haps = mutrez + "/mutations_data_cleanHap.csv",
-        evoef_data = mutrez + "/mutations_data_4EVOEFmodels.csv"
+        evoef_data = mutrez + "/mutations_data_4models.csv"
     shell:
         """
             cat {input.cleaned_haps} > {output.cleaned_haps}
@@ -72,10 +72,10 @@ rule get_template_mutation_data:
         map_s_p = work_dir+"/mutants_sequence_generation/{pdb}={seqtempl}.csv",
         data = config["mutants"]
     output:
-        work_dir+"/mutants_sequence_generation/{pdb,[^=]+}={seqtempl,[^=]+}=template_mutation_data__EVOEF.csv",
+        work_dir+"/mutants_sequence_generation/{pdb,[^=]+}={seqtempl,[^=]+}=template_mutation_data__4models.csv",
         work_dir+"/mutants_sequence_generation/{pdb,[^=]+}={seqtempl,[^=]+}=template_mutation_data__cleanhap.csv"
     # notebook:
-    #    "notebooks/get_template_mutation_data.r.ipynb"   
+    #   "notebooks/get_template_mutation_data.r.ipynb"   
     script:
         "notebooks/get_template_mutation_data.r.R"   
 
@@ -89,6 +89,7 @@ checkpoint create_idividual_tasks_4_modeling_with_EVOEF:
         directory(work_dir + "/mutants_structure_generation/EVOEF/todoList") # writes out small text file for each mutants to be generated
     notebook:
         "notebooks/create_idividual_tasks_4_modeling_with_EVOEF.py.ipynb"
+
 
 
 def aggregate_EVOEF_results(wildcards):
@@ -173,7 +174,7 @@ rule run_evoEF1_eval_substract:
 rule run_evoEF1_eval_summary:
     input:
         evoEF1_rez =  aggregate_EVOEF_results,
-        muation_data = mutrez + "/mutations_data_4EVOEFmodels.csv",
+        muation_data = mutrez + "/mutations_data_4models.csv",
     output:
         muation_data = mutrez + "/mutations_data_4EVOEFmodels_results.csv",
     #notebook:
@@ -182,6 +183,99 @@ rule run_evoEF1_eval_summary:
         "notebooks/collect_evoef1_results.r.R"
 
 
-
-
+#### rules to prepare for template based modelling modelling
         
+checkpoint create_idividual_tasks_4_modeling_with_sequence: #for tools that can model full sequence
+    input:
+        mutrez + "/mutations_data_4models.csv",
+    output:
+        directory(work_dir + "/mutants_structure_generation/TEMPLATES/todoList") # writes out small text file for each mutants to be generated
+    notebook:
+        "notebooks/create_idividual_tasks_4_modeling_based_on_templates.py.ipynb"
+
+rule get_template_sequence:
+    input:
+        coordinates = work_dir+"/mutants_sequence_generation/{pdb}_vs_templates_blastp.txt",
+        pdbfasta = work_dir+"/processed_info/{pdb}.fasta",
+        pdbtemplates = config["mutants_templates"],
+        todo = work_dir + "/mutants_structure_generation/TEMPLATES/todoList/{pdb}={chain}={mutations}",
+    log:
+        work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{pdb}={chain}={mutations}.log"
+    output:
+        todo = work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{pdb}={chain}={mutations}.fasta" # this contains all template sequence
+    # notebook:
+    #    "notebooks/get_template_sequence.py.ipynb"
+    script:
+        "notebooks/get_template_sequence.py.py"
+
+
+def aggregate_TEMPLATE_seqs(wildcards):
+    checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
+    stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
+    return(expand(work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{stem}.fasta",stem=stems))
+
+def aggregate_TEMPLATE_promod_models(wildcards):
+    checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
+    stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
+    return(expand(work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{stem}.pdb",stem=stems))
+
+def aggregate_TEMPLATE_promod_models_ready_4_eval(wildcards):
+    checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
+    stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
+    return(expand(work_dir + "/evaluation/starting_structures/{stem}_1.pdb",stem=stems))
+
+rule model_mutants_promod:
+    input:
+        "containers/promod.sif",
+        structure = work_dir+"/processed/{pdb}.pdb",
+        sequence = work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{pdb}={chain}={mutations}.fasta" 
+    output:
+        model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.pdb"
+    log:
+        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.log"
+    container: "containers/promod.sif"
+    threads: 8
+    shell:
+        """
+        export OPENMM_CPU_THREADS={threads}
+        PYTHONPATH=covid-lt covid-lt/bin/promod-model --simulate --trim --template {input.structure} --sequences {input.sequence} 1> {output.model} 2> {log} 
+        """ 
+
+
+rule copy_for_evaluation:
+    input:
+        model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.pdb"
+    output:
+        model = work_dir + "/evaluation/starting_structures/{pdb}={chain}={mutations}_1.pdb"
+    shell:
+        """
+            cp {input} {output}
+        """
+
+#### aggregates for evaluation collection and testing
+
+
+def aggregate_TEMPLATE_promod_models_prodigy(wildcards):
+    checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
+    stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
+    return(expand(
+        
+        work_dir + "/evaluation/scores/{stem}_1_prodigy.tsv",
+        stem=stems))
+
+def aggregate_TEMPLATE_promod_models_evoef1(wildcards):
+    checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
+    stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
+    return(expand(
+        
+        work_dir + "/evaluation/scores/{stem}_1_evoef1.tsv",
+        stem=stems))
+
+rule mutants_targets_templates:
+    input:
+        todolist = work_dir + "/mutants_structure_generation/TEMPLATES/todoList",
+        modelling_templates = aggregate_TEMPLATE_seqs,
+        promod_models = aggregate_TEMPLATE_promod_models,
+        promod_models_copied_4_eval = aggregate_TEMPLATE_promod_models_ready_4_eval,
+        promod_models_prodigy_evals = aggregate_TEMPLATE_promod_models_prodigy,
+        promod_models_evoef1_evals = aggregate_TEMPLATE_promod_models_evoef1

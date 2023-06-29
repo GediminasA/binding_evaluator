@@ -4,3 +4,4 @@ snakemake -c 2 --use-conda --configfile configs/prodigy.yaml    --use-conda --us
 snakemake --profile local --configfile configs/antibody.yaml -f  mutants_target
 snakemake --profile local --configfile configs/antibody.yaml -k collect_data_befor_modelling
 snakemake --profile local --configfile configs/antibody.yaml -f antibody_run/mutants_structure_generation/EVOEF/structures/7LQV=A=E175K,F176R.pdb
+snakemake --profile local --configfile configs/antibody.yaml -f  mutants_targets_templates
