@@ -5,6 +5,7 @@ pdb_template_stems = list(set(df_muts.PDB))
 seqs_4mutations = list(set([s.strip() for s in df_muts.Template]))
 pair4mut = ["=".join(l) for l in  list(set(list(zip([s.strip() for s in df_muts.PDB],[s.strip() for s in df_muts.Template]))))]
 mutrez = work_dir + "/rezults"
+nconf = config["conformers_to_evaluate"]
 
 rule mutants_targets_EVOEF:
     input:
@@ -224,6 +225,11 @@ def aggregate_TEMPLATE_promod_models_ready_4_eval(wildcards):
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(work_dir + "/evaluation/starting_structures/{stem}_1.pdb",stem=stems))
 
+def aggregate_TEMPLATE_promod_models_ready_4_eval_with_conformers(wildcards):
+    checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
+    stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
+    return(expand(work_dir + "/evaluation/starting_structures/{stem}_{id}.pdb",stem=stems, id = range(1, nconf+2)))
+
 rule model_mutants_promod:
     input:
         "containers/promod.sif",
@@ -242,7 +248,7 @@ rule model_mutants_promod:
         """ 
 
 
-rule copy_for_evaluation:
+rule copy_for_evaluation_static:
     input:
         model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.pdb"
     output:
@@ -252,6 +258,65 @@ rule copy_for_evaluation:
             cp {input} {output}
         """
 
+    
+
+rule generate_conformations_CABS_part1:
+    input:
+        "{stem}.pdb"        
+    output:
+        ["{stem}_CABS/output_pdbs/model_"+str(id)+".pdb" for id in range(0,nconf)]
+    params:
+        lwdir = "{stem}_CABS",
+        nconf = nconf
+    conda:
+        "../envs/CABS.yaml"
+    shell:
+        """
+            echo {params.lwdir}
+            mkdir -p  {params.lwdir}
+            CABSflex --dssp mkdssp -o M -a 2 -y {params.nconf} -i {input} -w {params.lwdir}
+        """
+            #mkdir -p {prams.lwdir}
+            #CABSflex --dssp mkdssp -o M -a 2 -y 10 -i {input} -w {params.lwdir} 
+
+rule generate_conformations_CABS_part2:
+    input:
+        ["{stem}_CABS/output_pdbs/model_"+str(id)+"_FULL.pdb" for id in range(0,nconf)]
+    output:
+        ["{stem}_"+str(id)+"_CABS.pdb" for id in range(2,nconf+2)] #second number is reserved for WT
+    run:
+        n = len(input)
+        print(n)
+        for i in range(0,n):
+            inf = input[i]
+            outputf = output[i]
+            shell("cp {inf} {outputf}")
+
+
+rule copy_for_evaluation_dynamic:
+    input:
+        model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{stem}_{id}_CABS.pdb"
+    output:
+        model = work_dir + "/evaluation/starting_structures/{stem}_{id,[^1]\d?|1\d+}.pdb" # one is reserved for static
+    shell:
+        """
+            cp {input} {output}
+        """
+
+rule get_full_atoms_structure_from_CA:
+    input:
+        "{stem}.pdb" 
+    output:
+        "{stem}_FULL.pdb"
+    conda:
+        "../envs/modeller.yaml"
+    shell:
+        """
+            python2.7 external/ca2all.py  -i {input} -o {output}
+        """
+
+
+
 #### aggregates for evaluation collection and testing
 
 
@@ -260,8 +325,16 @@ def aggregate_TEMPLATE_promod_models_prodigy(wildcards):
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(
         
-        work_dir + "/evaluation/scores/{stem}_1_prodigy.tsv",
-        stem=stems))
+        work_dir + "/evaluation/scores/{stem}_{id}_prodigy.tsv",
+        stem=stems, id=[1]))
+
+def aggregate_TEMPLATE_promod_models_prodigy_with_conformers(wildcards):
+    checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
+    stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
+    return(expand(
+        
+        work_dir + "/evaluation/scores/{stem}_{id}_prodigy.tsv",
+        stem=stems, id=range(1,12)))
 
 def aggregate_TEMPLATE_promod_models_evoef1(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
@@ -271,11 +344,35 @@ def aggregate_TEMPLATE_promod_models_evoef1(wildcards):
         work_dir + "/evaluation/scores/{stem}_1_evoef1.tsv",
         stem=stems))
 
+def aggregate_TEMPLATE_promod_models_evoef1_with_conformers(wildcards):
+    checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
+    stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
+    return(expand(
+        
+        work_dir + "/evaluation/scores/{stem}_{id}_evoef1.tsv",
+        stem=stems, id=range(1,12)))
+
+
 rule mutants_targets_templates:
     input:
-        todolist = work_dir + "/mutants_structure_generation/TEMPLATES/todoList",
-        modelling_templates = aggregate_TEMPLATE_seqs,
+        #todolist = work_dir + "/mutants_structure_generation/TEMPLATES/todoList",
+        #target = aggregate_TEMPLATE_promod_models_prodigy
+        # modelling_templates = aggregate_TEMPLATE_seqs,
         promod_models = aggregate_TEMPLATE_promod_models,
         promod_models_copied_4_eval = aggregate_TEMPLATE_promod_models_ready_4_eval,
+        promod_models_copied_4_eval_with_conformers = aggregate_TEMPLATE_promod_models_ready_4_eval_with_conformers,
         promod_models_prodigy_evals = aggregate_TEMPLATE_promod_models_prodigy,
-        promod_models_evoef1_evals = aggregate_TEMPLATE_promod_models_evoef1
+        promod_models_prodigy_evals_with_conformers = aggregate_TEMPLATE_promod_models_prodigy_with_conformers,
+        promod_models_evoef1_evals = aggregate_TEMPLATE_promod_models_evoef1,
+        promod_models_evoef1_evals_with_conformers = aggregate_TEMPLATE_promod_models_evoef1_with_conformers
+
+rule get_summary_of_binding:
+    input:
+        promod_models_prodigy_evals = aggregate_TEMPLATE_promod_models_prodigy_with_conformers,
+        promod_models_evoef1_evals = aggregate_TEMPLATE_promod_models_evoef1_with_conformers
+    output:
+        ddg_results_on_promod_full = mutrez + "/promod_models_results_full.csv",
+        ddg_results_on_promod_main = mutrez + "/promod_models_results_main.csv",
+    notebook:
+        "notebooks/collect_results_4promod.r.ipynb"
+

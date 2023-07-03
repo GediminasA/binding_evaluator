@@ -1,0 +1,7 @@
+name: binding_evaluator
+channels:
+  - conda-forge
+  - salilab
+dependencies:
+  - python=2.7
+  - modeller

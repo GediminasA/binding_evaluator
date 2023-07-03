@@ -8,6 +8,7 @@ mutants: data/example_mutations.csv
 mutants_templates: data/example_mations_templates.fasta 
 preprocessed_structures: data/test_structures 
 workdir: antibody_run
+conformers_to_evaluate: 10 # zero - mean static evaluation
 main_chain: A
 rosetta:
   folder: /mnt/raid/ga/rosetta_bin_linux_2021.16.61629_bundle

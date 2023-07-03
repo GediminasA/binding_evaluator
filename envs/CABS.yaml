@@ -1,0 +1,10 @@
+name: binding_evaluator
+channels:
+  - lcbio
+  - conda-forge
+  - bioconda
+  - salilab
+dependencies:
+  - cabs
+  - gfortran_linux-64
+  - dssp
