@@ -2,8 +2,8 @@
 import pandas as pd 
 df_muts = pd.read_csv(config["mutants"])
 pdb_template_stems = list(set(df_muts.PDB))
-seqs_4mutations = list(set([s.strip() for s in df_muts.Template]))
-pair4mut = ["=".join(l) for l in  list(set(list(zip([s.strip() for s in df_muts.PDB],[s.strip() for s in df_muts.Template]))))]
+seqs_4mutations = list(set([str(s).strip() for s in df_muts.Template]))
+pair4mut = ["=".join(l) for l in  list(set(list(zip([str(s).strip() for s in df_muts.PDB],[str(s).strip() for s in df_muts.Template]))))]
 mutrez = work_dir + "/rezults"
 nconf = config["conformers_to_evaluate"]
 
@@ -62,9 +62,10 @@ rule get_template_pdb_map:
     input:
         coordinates = work_dir+"/mutants_sequence_generation/{pdb}_vs_templates_blastp.txt"
     output:
-        work_dir+"/mutants_sequence_generation/{pdb}={seqtempl,[^=]+}.csv",
+        #work_dir+"/mutants_sequence_generation/{pdb}={seqtempl,[^=]+}.csv",
+        work_dir+"/mutants_sequence_generation/{pdb,[^=]+}={seqtempl,[^=]+}.csv",
     script:
-     "notebooks/get_template_pdb_map.py.py"
+        "notebooks/get_template_pdb_map.py.py"
     # notebook:
     #   "notebooks/get_template_pdb_map.py.ipynb"
 
@@ -203,7 +204,7 @@ rule get_template_sequence:
     log:
         work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{pdb}={chain}={mutations}.log"
     output:
-        todo = work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{pdb}={chain}={mutations}.fasta" # this contains all template sequence
+        todo = work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{pdb}={chain}={mutations,[^_]+}.fasta" # this contains all template sequence
     # notebook:
     #    "notebooks/get_template_sequence.py.ipynb"
     script:
@@ -236,7 +237,7 @@ rule model_mutants_promod:
         structure = work_dir+"/processed/{pdb}.pdb",
         sequence = work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{pdb}={chain}={mutations}.fasta" 
     output:
-        model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.pdb"
+        model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}.pdb"
     log:
         work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.log"
     container: "containers/promod.sif"
@@ -252,7 +253,7 @@ rule copy_for_evaluation_static:
     input:
         model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.pdb"
     output:
-        model = work_dir + "/evaluation/starting_structures/{pdb}={chain}={mutations}_1.pdb"
+        model = work_dir + "/evaluation/starting_structures/{pdb}={chain}={mutations,[^_]+}_1.pdb"
     shell:
         """
             cp {input} {output}
@@ -334,7 +335,7 @@ def aggregate_TEMPLATE_promod_models_prodigy_with_conformers(wildcards):
     return(expand(
         
         work_dir + "/evaluation/scores/{stem}_{id}_prodigy.tsv",
-        stem=stems, id=range(1,12)))
+        stem=stems, id=range(1, nconf+2)))
 
 def aggregate_TEMPLATE_promod_models_evoef1(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
@@ -350,7 +351,7 @@ def aggregate_TEMPLATE_promod_models_evoef1_with_conformers(wildcards):
     return(expand(
         
         work_dir + "/evaluation/scores/{stem}_{id}_evoef1.tsv",
-        stem=stems, id=range(1,12)))
+        stem=stems, id = range(1, nconf+2)))
 
 
 rule mutants_targets_templates:

@@ -6,7 +6,7 @@ rule run_prodigy_mutants:
         complex_str = work_dir + "/evaluation/starting_structures/{pdb}={chain}={mutations}_{frame}.pdb",
         interacting_groups = work_dir+"/processed_info/{pdb,[^_]+}_interactigGroups.tsv"
     output:
-        complex_prodigy = work_dir + "/evaluation/scores/{pdb}={chain}={mutations}_{frame,[^_]+}_prodigy_ini.out"
+        complex_prodigy = work_dir + "/evaluation/scores/{pdb}={chain}={mutations,[^_]+}_{frame,[^_]+}_prodigy_ini.out"
     params:
         id= "{pdb}={chain}={mutations}_{frame}",
     log:
