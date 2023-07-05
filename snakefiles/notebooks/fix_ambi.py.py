@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[ ]:
 
 
+import warnings
+warnings.filterwarnings('ignore')
 from Bio import PDB, SeqIO, pairwise2
 import pandas as pd
 sys.path.append(snakemake.params.path)
@@ -14,9 +16,10 @@ from Bio.Data.IUPACData import protein_letters_3to1_extended
 from Bio.Data.IUPACData import protein_letters_3to1
 from Bio.pairwise2 import format_alignment
 
+logf = open(snakemake.log[0],"w")
 
 
-# In[3]:
+# In[ ]:
 
 
 kext = list(protein_letters_3to1_extended.keys())
@@ -33,15 +36,14 @@ for k in protein_letters_3to1_extended:
     
 
 
-# In[4]:
+# In[ ]:
 
 
 df = pd.read_csv(snakemake.input.swiss, sep="\t",
                  header=0,names=["E","Pid","START","END","CHAIN","SID","QSEQ","SSEQ"],)
-df.head(n=100)
 
 
-# In[5]:
+# In[ ]:
 
 
 # chack what needs to be masked
@@ -51,6 +53,9 @@ for ch in df.CHAIN:
     ct += 1
     chid = ch.replace("chain","")
     lid = 0
+#     print(chid)
+#     print(df.QSEQ[ct-1])
+#     print(df.SSEQ[ct-1])
     for l in df.QSEQ[ct-1]:
         lid += 1
         ql = df.QSEQ[ct-1][lid-1]
@@ -59,30 +64,29 @@ for ch in df.CHAIN:
             kk = (chid,lid,ql)
             if not kk in map2n.keys():
                 map2n[kk] = sl
-map2n    
 
 
-# In[6]:
+# In[ ]:
 
 
 pdb = PDBFile(snakemake.input[1])
 
 
-# In[7]:
+# In[ ]:
 
 
-# for chain in pdb:
-#     seqres_seq = chain.sequence_seqres()
-#     atom_seq = chain.sequence_atom()
-#     for a in pairwise2.align.globalxx(seqres_seq, atom_seq,one_alignment_only=True):
-#         print(format_alignment(*a))
-#         print("SEQRES",seqres_seq)
-#         print("ATOMRE",atom_seq)
+for chain in pdb:
+    seqres_seq = chain.sequence_seqres()
+    atom_seq = chain.sequence_atom()
+    for a in pairwise2.align.globalxx(seqres_seq, atom_seq,one_alignment_only=True):
+        logf.write(format_alignment(*a))
+        logf.write("SEQRES "+seqres_seq+"\n")
+        logf.write("ATOMRE "+atom_seq+"\n")
     
     
 
 
-# In[8]:
+# In[ ]:
 
 
 SEQRES_updated = ""
@@ -128,7 +132,7 @@ for chain in pdb:
 #print(SEQRES_updated)
 
 
-# In[9]:
+# In[ ]:
 
 
 map3D = {}
@@ -162,11 +166,11 @@ for chain in pdb:
                     if var3L == "":
                         raise Exception(f"Inconsistencies between seqres and sequence records, residue {lB3}, chain {chain.name}, number {id4sub}")
             
-print(map3D)
+#print(map3D)
     
 
 
-# In[10]:
+# In[ ]:
 
 
 def parse_atom_line(line):
@@ -207,7 +211,7 @@ def parse_atom_line(line):
 
 
 
-# In[11]:
+# In[ ]:
 
 
 def generate_atom_line(fields):
@@ -264,7 +268,7 @@ def generate_atom_line(fields):
 # # #print(atom_line_2 == regenerated_line_2)
 
 
-# In[12]:
+# In[ ]:
 
 
 # get atom content
@@ -275,7 +279,7 @@ for l in pdb.content:
     
 
 
-# In[13]:
+# In[ ]:
 
 
 #modify atom content
@@ -300,7 +304,7 @@ for i in range(0,len(Afields)):
         
 
 
-# In[14]:
+# In[ ]:
 
 
 # regenerate lines
@@ -309,11 +313,11 @@ for i in range(0,len(Afields)):
     fields = Afields[i]
     l = generate_atom_line(fields)
     ATOM_lines.append(l)
-    if l.find("GLX") > -1:
-        print(l)
+#     if l.find("GLX") > -1:
+#         print(l)
 
 
-# In[15]:
+# In[ ]:
 
 
 #regenerate all

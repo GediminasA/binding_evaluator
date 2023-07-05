@@ -9,22 +9,26 @@ nconf = config["conformers_to_evaluate"]
 
 rule mutants_targets_EVOEF:
     input:
-        pdb_templates = expand(
-            work_dir+"/processed/{stem}.pdb",
+        # pdb_templates = expand(
+        #     work_dir+"/processed/{stem}.pdb",
+        #     stem=pdb_template_stems),
+        pdb_test = expand(
+            work_dir+"/initial_cleanup/{stem}_noambi.pdb",
             stem=pdb_template_stems),
-        pdb_sequences = expand(
-            work_dir+"/processed_info/{stem}.fasta",
-            stem=pdb_template_stems),
-        pdb_sequences_aligned_to_templates = expand(
-            work_dir+"/mutants_sequence_generation/{stem}_vs_templates_blastp.txt",
-            stem=pdb_template_stems),
-        pdb_templates_map = expand(
-            work_dir+"/mutants_sequence_generation/{pair}.csv", #map input seq to pdb map 
-            pair = pair4mut),
-        pdb_tempplate_mutation_data = expand(
-            work_dir+"/mutants_sequence_generation/{pair}=template_mutation_data__4models.csv",
-            pair = pair4mut),
-        ddg_results = mutrez + "/mutations_data_4EVOEFmodels_results.csv"
+        #prodigy_test/initial_cleanup/1S1Q_noambi.pdb
+        # pdb_sequences = expand(
+        #     work_dir+"/processed_info/{stem}.fasta",
+        #     stem=pdb_template_stems),
+        # pdb_sequences_aligned_to_templates = expand(
+        #     work_dir+"/mutants_sequence_generation/{stem}_vs_templates_blastp.txt",
+        #     stem=pdb_template_stems),
+        # pdb_templates_map = expand(
+        #     work_dir+"/mutants_sequence_generation/{pair}.csv", #map input seq to pdb map 
+        #     pair = pair4mut),
+        # pdb_tempplate_mutation_data = expand(
+        #     work_dir+"/mutants_sequence_generation/{pair}=template_mutation_data__4models.csv",
+        #     pair = pair4mut),
+        # ddg_results = mutrez + "/mutations_data_4EVOEFmodels_results.csv"
         
 
 rule collect_data_befor_modelling:

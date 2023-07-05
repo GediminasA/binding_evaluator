@@ -6,3 +6,4 @@ snakemake --profile local --configfile configs/antibody.yaml -k collect_data_bef
 snakemake --profile local --configfile configs/antibody.yaml -f antibody_run/mutants_structure_generation/EVOEF/structures/7LQV=A=E175K,F176R.pdb
 snakemake --profile local --configfile configs/antibody.yaml -f  mutants_targets_templates
 snakemake --profile local --configfile configs/antibody.yaml  -f  antibody_run/rezults/promod_models_results_main.csv
+snakemake --profile local --configfile configs/prodigyv2.yaml  get_summary_of_binding

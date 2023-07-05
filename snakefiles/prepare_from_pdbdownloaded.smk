@@ -28,19 +28,22 @@ rule download_pdb:
     output:
         pdbproc_dir+"/pristine/{stem}.pdb"
         #config["structures_folder"]+"/{stem}.pdb"
+    log:
+        pdbproc_dir+"/pristine/{stem}.log"
     params:
         stem = "{stem}"
     params:
         localdb = config["structures_folder"]
     run:
+        logf = open(f"{log}","w")
         local = config["structures_folder"]+"/"+wildcards.stem+".pdb"
-        print(local)
         if os.path.exists(local):
-            print(f"copying file {local} to {output}")
+            logf.write(f"copying file {local} to {output}\n")
             shell("cp {local} {output}")
         else:
-            print(f"downloading file {local} to {output}")
+            logf.write(f"downloading {params.stem} to {output}\n")
             shell("pdb_fetch {params.stem} > {output}")
+        logf.close()
 
 rule download_swiss_prot_db:
     params:
@@ -63,12 +66,14 @@ rule extract_seqs_initial:
     output:
         fasta = work_dir+"/initial_cleanup/{stem,[^_]+}.fasta",
         pdb = work_dir+"/initial_cleanup/{stem,[^_]+}_woHetinSeqres.pdb"
+    log:
+         work_dir+"/initial_cleanup/{stem,[^_]+}_woHetinSeqres.log"
     params:
         path = "covid-lt/"
     # notebook:
-    #      "notebooks/extract_pdbsequence.py.ipynb"
+    #     "notebooks/extract_pdbsequence.py.ipynb"
     script: 
-     "notebooks/extract_pdbsequence.py.py"
+        "notebooks/extract_pdbsequence.py.py"
 
 rule extract_seqs_pristine:
     input:
@@ -106,10 +111,10 @@ rule fix_ambiquous_positions:
         work_dir+"/initial_cleanup/{stem,[^_]+}_noambi.log"
     params:
         path = "covid-lt/"
-    notebook:
-       "notebooks/fix_ambi.py.ipynb"
-    #script:
-    #    "notebooks/fix_ambi.py.py"
+    # notebook:
+    #    "notebooks/fix_ambi.py.ipynb"
+    script:
+       "notebooks/fix_ambi.py.py"
 
 rule t4t:
     input:

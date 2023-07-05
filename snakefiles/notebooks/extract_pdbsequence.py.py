@@ -4,6 +4,8 @@
 # In[ ]:
 
 
+import warnings
+warnings.filterwarnings('ignore')
 from Bio import PDB, SeqIO, pairwise2
 import pandas as pd
 sys.path.append(snakemake.params.path)
@@ -15,11 +17,13 @@ from Bio.Data.IUPACData import protein_letters_3to1
 from Bio.pairwise2 import format_alignment
 from Bio.Seq import MutableSeq
 from Bio.Align import substitution_matrices
+logf = open(snakemake.log[0],"w")
 
 
 # In[ ]:
 
 
+#prepare mappings
 kext = list(protein_letters_3to1_extended.keys())
 kmain = list(protein_letters_3to1.keys())
 spec3a = list(set(kext)- set(kmain))
@@ -30,7 +34,8 @@ map3to1 = {}
 for k in protein_letters_3to1_extended:
     map1to3[protein_letters_3to1_extended[k]] = k.upper()
     map3to1[k.upper()] = protein_letters_3to1_extended[k]
-   
+
+#kmain
 
 
 # In[ ]:
@@ -143,10 +148,15 @@ for l in pdb.content:
 
 #collect hetero residues
 hets = []
+standard3As = [s.upper() for s in kext]
 for a in Afields:
     if a["record_name"] != "ATOM":
         hets.append(a["res_name"])
 hets = list(set([i.upper() for i in hets]))
+hets = list(set(hets).difference(set(standard3As)))
+logf.write(f"DTECTED HETS: {hets}\n")
+#print(f"DTECTED HETS: {hets}\n")
+# remove AA seymbols from hets # in some structures like 4CPA some AA are trated as HETERO residues (GLY in 4CPA case)
 
 
 # In[ ]:
@@ -157,6 +167,7 @@ SEQRES_updated = ""
 hets4unchain = [] # a tuple of resname and chain - for removal of heteroatoms
 for chain in pdb:
     seqres_seq, seqreq_seq_3L = chain.sequence_seqres(return_3L=True)
+    #print(seqres_seq, seqreq_seq_3L)
     atom_seq = chain.sequence_atom()
     
     #check how many to keep at the ends
@@ -232,6 +243,9 @@ for chain in pdb:
                     ct = 0
         else:
             hets4unchain.append((var3L,chain.name))
+            
+            logf.write(f"removing {var3L} residues in chain {chain.name}\n") 
+            #print(f"removing {var3L} residues in chain {chain.name}\n", s)
         #print(out_laines)
         
     outl = " ".join(out)
@@ -246,7 +260,6 @@ for chain in pdb:
             ll = "SEQRES "+str(ctl).rjust(3)+chain.name.rjust(2)+" "+str(ctseqres).rjust(4)+"  "+l
             SEQRES_updated += ll+"\n"
 hets4unchain = list(set(hets4unchain))
-print(hets4unchain)
 
 
 # In[ ]:
@@ -311,10 +324,4 @@ for chain in pdb:
         
 with open(snakemake.output.fasta,"w") as fo:
     fo.write("\n".join(out))
-
-
-# In[ ]:
-
-
-
 
