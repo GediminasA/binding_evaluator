@@ -7,3 +7,4 @@ snakemake --profile local --configfile configs/antibody.yaml -f antibody_run/mut
 snakemake --profile local --configfile configs/antibody.yaml -f  mutants_targets_templates
 snakemake --profile local --configfile configs/antibody.yaml  -f  antibody_run/rezults/promod_models_results_main.csv
 snakemake --profile local --configfile configs/prodigyv2.yaml  get_summary_of_binding
+snakemake --profile local --configfile configs/prodigyv2.yaml -k mutants_targets_EVOEF 
