@@ -154,7 +154,7 @@ rule fix_with_promod:
     log:
         "{stem}_promod.log"
     container: "containers/promod.sif"
-    threads: 1000
+    threads: 4
     shell:
         """
         export OPENMM_CPU_THREADS={threads}

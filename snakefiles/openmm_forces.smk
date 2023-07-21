@@ -22,7 +22,7 @@ rule evaluate_openmm_ff1:
         tsv = "{directory}/{stem,[^_]+}_{part,[\d]+}_{frame,[^_]+}_ff_{ff1}.tsv"
     log: 
         "{directory}/{stem,[^_]+}_{part,[\d]+}_{frame,[^_]+}_ff_{ff1}.log"
-    singularity:
+    container:
         "containers/openmm.sif"
     shell:
         """
@@ -37,7 +37,7 @@ rule evaluate_openmm_ff2:
         tsv = "{directory}/{stem,[^_]+}_{part,[\d]+}_{frame,[^_]+}_ff_{ff1}-{ff2}.tsv"
     log:
         "{directory}/{stem,[^_]+}_{part,[\d]+}_{frame,[^_]+}_ff_{ff1}-{ff2}.log"
-    singularity:
+    container:
         "containers/openmm.sif"
     shell:
         """

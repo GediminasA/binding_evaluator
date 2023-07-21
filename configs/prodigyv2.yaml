@@ -7,5 +7,5 @@ mutants: data/example_mutations_prodigy.csv # to calculate energetics only on WT
 mutants_templates: data/example_mations_templates.fasta  # if mutation sare not dopne these cpuld be ignored
 preprocessed_structures: data/test_structures 
 workdir: prodigy_test
-conformers_to_evaluate: 0 # 0 - mean static evaluation
+conformers_to_evaluate: 10 # 0 - mean static evaluation
 main_chain: A

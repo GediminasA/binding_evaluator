@@ -40,20 +40,23 @@ rule parse_prodigy_mutants:
         complex_prodigy = work_dir + "/evaluation/scores/{pdb}={chain}={mutations}_{frame,[^_]+}_prodigy.tsv"
     params:
         id= "{pdb}={chain}={mutations}_{frame}",
-    notebook:
-        "notebooks/parse_prodigy.r.ipynb"
+    # notebook:
+    #     "notebooks/parse_prodigy.r.ipynb"
+    script:
+        "notebooks/parse_prodigy.r.R"
 
 
 rule run_evoEF1_eval_mutants:
     input:
         mut = work_dir + "/evaluation/starting_structures/{pdb}={chain}={mutations}_{frame}.pdb",
-        interacting_groups = work_dir+"/processed_info/{pdb,[^_]+}_interactigGroups.tsv"
+        interacting_groups = work_dir+"/processed_info/{pdb,[^_]+}_interactigGroups.tsv",
+        container = "containers/evoef1.sif"
     output:
         mut = work_dir + "/evaluation/scores/{pdb}={chain}={mutations}_{frame,[^_]+}_evoef1.tsv"
     params:
         mut = os.path.abspath(work_dir + "/evaluation/starting_structures/{pdb}={chain}={mutations}_{frame}.pdb"),
         part1_part2 = get_interacting_chains4evoEF1
-    singularity:
+    container:
         "containers/evoef1.sif"
     shell:
         """

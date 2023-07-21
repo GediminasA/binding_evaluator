@@ -1,0 +1,27 @@
+Bootstrap: library
+From: ubuntu:16.04
+Stage: build
+
+
+%environment
+    export GALAXY_HOME=/opt/GalaxyRefineComplex
+    export NSLOTS=8
+    export EXEC_MPI=/usr/local/bin/mpiexec
+
+%post
+    apt-get update && apt-get install -y curl build-essential unzip git
+    cd /opt
+    git clone https://github.com/liuzi919/GalaxyRefineComplex.git
+    cd GalaxyRefineComplex/bin
+    gunzip *
+    cd ../../
+    cd GalaxyRefineComplex/data
+    gunzip *
+    NOW=`date`
+    echo "export NOW=\"${NOW}\"" >> $SINGULARITY_ENVIRONMENT
+    curl -O https://www.mpich.org/static/downloads/3.2.1/hydra-3.2.1.tar.gz
+    tar -xvzf hydra-3.2.1.tar.gz
+    cd hydra-3.2.1
+    ./configure
+     make 
+     make install

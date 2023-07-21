@@ -1,5 +1,6 @@
 ### PROCESS CSV file with mutations ###
 import pandas as pd 
+import tempfile
 df_muts = pd.read_csv(config["mutants"])
 pdb_template_stems = list(set(df_muts.PDB))
 seqs_4mutations = list(set([str(s).strip() for s in df_muts.Template]))
@@ -42,11 +43,15 @@ rule collect_data_befor_modelling:
     output:
         cleaned_haps = mutrez + "/mutations_data_cleanHap.csv",
         evoef_data = mutrez + "/mutations_data_4models.csv"
-    shell:
-        """
-            cat {input.cleaned_haps} > {output.cleaned_haps}
-            cat {input.evoef_data} > {output.evoef_data}
-        """
+    # notebook:
+    #     "notebooks/collect_data_before_modelling.r.ipynb"   
+    script:
+        "notebooks/collect_data_before_modelling.r.R"   
+        
+        # """
+        #     cat {input.cleaned_haps} > {output.cleaned_haps}
+        #     cat {input.evoef_data} > {output.evoef_data}
+        # """
 
 
 #### rules to prepare for EVOEF modelling
@@ -123,7 +128,7 @@ rule run_evoEF1_modelling:
         wt = work_dir + "/mutants_structure_generation/EVOEF/structures/{pdb}={chain}={mutations}=WT.pdb"
     log:
         os.path.abspath(work_dir + "/mutants_structure_generation/EVOEF/structures/{pdb}={chain}={mutations}.log")
-    singularity:
+    container:
         "containers/evoef1.sif"
     shell:
         """
@@ -153,7 +158,7 @@ rule run_evoEF1_eval:
         wdir = work_dir + "/mutants_structure_scoring/EVOEF/scores/{pdb}={chain}={mutations}",
         num_of_runs = 10,
         part1_part2 = get_interacting_chains4evoEF1
-    singularity:
+    container:
         "containers/evoef1.sif"
     shell:
         """
@@ -255,7 +260,7 @@ rule model_mutants_promod:
 
 rule copy_for_evaluation_static:
     input:
-        model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.pdb"
+        model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}_DeepRefine.pdb"
     output:
         model = work_dir + "/evaluation/starting_structures/{pdb}={chain}={mutations,[^_]+}_1.pdb"
     shell:
@@ -269,7 +274,8 @@ rule generate_conformations_CABS_part1:
     input:
         "{stem}.pdb"        
     output:
-        ["{stem}_CABS/output_pdbs/model_"+str(id)+".pdb" for id in range(0,nconf)]
+        #["{stem}_CABS/output_pdbs/model_"+str(id)+".pdb" for id in range(0,nconf)]
+        ["{stem}_CABS/output_pdbs/model_"+str(id)+"_FULL.pdb" for id in range(0,nconf)]
     params:
         lwdir = "{stem}_CABS",
         nconf = nconf
@@ -279,10 +285,12 @@ rule generate_conformations_CABS_part1:
         """
             echo {params.lwdir}
             mkdir -p  {params.lwdir}
-            CABSflex --dssp mkdssp -o M -a 2 -y {params.nconf} -i {input} -w {params.lwdir}
+            CABSflex --dssp mkdssp -o M -i {input} -w {params.lwdir}
+            #CABSflex --dssp mkdssp -o M -a 2 -y {params.nconf} -i {input} -w {params.lwdir}
         """
             #mkdir -p {prams.lwdir}
             #CABSflex --dssp mkdssp -o M -a 2 -y 10 -i {input} -w {params.lwdir} 
+
 
 rule generate_conformations_CABS_part2:
     input:
@@ -298,9 +306,44 @@ rule generate_conformations_CABS_part2:
             shell("cp {inf} {outputf}")
 
 
+rule generate_conformations_Galaxy_part1:
+    input:
+        "{stem}.pdb",        
+        "containers/GalaxyRefineComplex.sif"
+    output:
+        ["{stem}_GalaxyRefineComplex/galaxyref/model/model_"+str(id)+".pdb" for id in range(1,nconf+1)]
+    params:
+        lwdir = "{stem}_GalaxyRefineComplex",
+        nconf = nconf,
+    container: "containers/GalaxyRefineComplex.sif"
+    threads: 16
+    shell:
+        """
+            mkdir -p  {params.lwdir}
+            startd=`pwd`
+            cd {params.lwdir}
+            export GALAXY_HOME=/opt/GalaxyRefineComplex
+            export NSLOTS={threads}
+            /opt/GalaxyRefineComplex/bin/GalaxyRefineComplex.ubuntu1604 --protocol1 -p $startd/{input[0]}  -t galaxyref 
+        """
+
+rule generate_conformations_GALAXY_part2:
+    input:
+        ["{stem}_GalaxyRefineComplex/galaxyref/model/model_"+str(id)+".pdb" for id in range(1,nconf+1)]
+    output:
+        ["{stem}_"+str(id)+"_GalaxyRefineComplex.pdb" for id in range(2,nconf+2)] #second number is reserved for WT
+    run:
+        n = len(input)
+        print(n)
+        for i in range(0,n):
+            inf = input[i]
+            outputf = output[i]
+            shell("cp {inf} {outputf}")
+
 rule copy_for_evaluation_dynamic:
     input:
-        model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{stem}_{id}_CABS.pdb"
+        model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{stem}_{id}_GalaxyRefineComplex.pdb"
+        #model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{stem}_{id}_CABS_DeepRefine.pdb"
     output:
         model = work_dir + "/evaluation/starting_structures/{stem}_{id,[^1]\d?|1\d+}.pdb" # one is reserved for static
     shell:
@@ -319,8 +362,53 @@ rule get_full_atoms_structure_from_CA:
         """
             python2.7 external/ca2all.py  -i {input} -o {output}
         """
+def get_tmp_dir(wildcards):
+ out = tempfile.TemporaryDirectory(dir = "/dev/shm").name
+ return(out)
 
+rule DeepRefine:
+    input:
+        "{stem}/{name,[^/]+}.pdb"
+    output:
+        file = "{stem}/{name,[^/]+}_DeepRefine.pdb",
+        score = "{stem}/{name,[^/]+}_DeepRefine_plddt.tsv"
+    threads: 4
+    params:
+        tmp =get_tmp_dir,
+        prog_path = os.getcwd() + "/DeepRefine",
+        cur_path = os.getcwd()
+    conda:
+        "../envs/DeepRefine.yaml"
+    shell:
+        """
+            startdir=`pwd`
+            indir={params.tmp}/in/input/
+            infile={params.tmp}/in/input/input.pdb
+            outdir={params.tmp}/out/
+            outfile={params.tmp}/out/input/input_refined.pdb
+            outscore={params.tmp}/out/input/input_refined_plddt.csv
+            
+            mkdir -p $indir
+            mkdir -p $outdir
+            cp  {input} $infile
 
+            DR_DIR={params.prog_path}
+            
+            ckpt_dir="$DR_DIR"/project/checkpoints/EGR_All_Atom_Models
+            ckpt_name=LitPSR_EGR_AllAtomModel1_Seed42.ckpt
+            atom_selection_type=all_atom
+            seed=42
+            nn_type=EGR
+            graph_return_format=dgl
+            
+            export PYTHONPATH=$DR_DIR
+            cd $DR_DIR/project
+            python3  lit_model_predict.py --device_type gpu --num_devices 1 --num_compute_nodes 1 --num_workers 1 --batch_size 1 --input_dataset_dir {params.tmp}/in --output_dir {params.tmp}/out  --ckpt_dir "$ckpt_dir" --ckpt_name "$ckpt_name" --atom_selection_type "$atom_selection_type" --seed "$seed" --nn_type "$nn_type" --graph_return_format "$graph_return_format" --perform_pos_refinement 
+            
+            cp $outfile $startdir/{output.file}
+            cp $outscore $startdir/{output.score}
+            rm -r {params.tmp} 
+        """
 
 #### aggregates for evaluation collection and testing
 
@@ -329,7 +417,6 @@ def aggregate_TEMPLATE_promod_models_prodigy(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(
-        
         work_dir + "/evaluation/scores/{stem}_{id}_prodigy.tsv",
         stem=stems, id=[1]))
 
@@ -361,15 +448,15 @@ def aggregate_TEMPLATE_promod_models_evoef1_with_conformers(wildcards):
 rule mutants_targets_templates:
     input:
         #todolist = work_dir + "/mutants_structure_generation/TEMPLATES/todoList",
-        #target = aggregate_TEMPLATE_promod_models_prodigy
+        target = aggregate_TEMPLATE_promod_models_prodigy,
         # modelling_templates = aggregate_TEMPLATE_seqs,
-        promod_models = aggregate_TEMPLATE_promod_models,
-        promod_models_copied_4_eval = aggregate_TEMPLATE_promod_models_ready_4_eval,
-        promod_models_copied_4_eval_with_conformers = aggregate_TEMPLATE_promod_models_ready_4_eval_with_conformers,
-        promod_models_prodigy_evals = aggregate_TEMPLATE_promod_models_prodigy,
-        promod_models_prodigy_evals_with_conformers = aggregate_TEMPLATE_promod_models_prodigy_with_conformers,
-        promod_models_evoef1_evals = aggregate_TEMPLATE_promod_models_evoef1,
-        promod_models_evoef1_evals_with_conformers = aggregate_TEMPLATE_promod_models_evoef1_with_conformers
+        #promod_models = aggregate_TEMPLATE_promod_models,
+        #promod_models_copied_4_eval = aggregate_TEMPLATE_promod_models_ready_4_eval,
+        #promod_models_copied_4_eval_with_conformers = aggregate_TEMPLATE_promod_models_ready_4_eval_with_conformers,
+        #promod_models_prodigy_evals = aggregate_TEMPLATE_promod_models_prodigy,
+        #promod_models_prodigy_evals_with_conformers = aggregate_TEMPLATE_promod_models_prodigy_with_conformers,
+        #promod_models_evoef1_evals = aggregate_TEMPLATE_promod_models_evoef1,
+        #promod_models_evoef1_evals_with_conformers = aggregate_TEMPLATE_promod_models_evoef1_with_conformers
 
 rule get_summary_of_binding:
     input:

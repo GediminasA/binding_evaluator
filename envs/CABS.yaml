@@ -6,5 +6,5 @@ channels:
   - salilab
 dependencies:
   - cabs
-  - gfortran_linux-64
+  - gfortran
   - dssp

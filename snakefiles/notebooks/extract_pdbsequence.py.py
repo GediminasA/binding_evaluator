@@ -174,6 +174,7 @@ for chain in pdb:
     align = pairwise2.align.globalds(seqres_seq, atom_seq, matrix, -11, -1, penalize_end_gaps=(False, False),one_alignment_only=True)[0]
     sequence = MutableSeq(align[0])
     structure = MutableSeq(align[1])
+#     print(f"CHAIN {chain.name}")
 #     print(seqres_seq)
 #     print(atom_seq)
 #     print("---")
@@ -217,6 +218,10 @@ for chain in pdb:
             endpos = posSE
             if posSE + 1 <= seqlen_woG :
                 endpos = endpos + 1
+            break
+#     print(posSE,posST, strlen_woG, endpos)
+        
+                
                 
     #check for hetero in sequences
     ct = 0
@@ -252,8 +257,9 @@ for chain in pdb:
     out_laines.append(outl)
     out_laines_with_prefixes = []
     ct = 0
-    nch = len(seqres_seq)
     ctl = 0
+    if abs(ctseqres-strlen_woG) > 2:
+                    logf.write(f"WARNING updated SEQRES length {ctseqres} and STRUCTURE length {strlen_woG} for chain {chain.name}\n") 
     for l in out_laines:
         if len(l) > 0:
             ctl += 1
