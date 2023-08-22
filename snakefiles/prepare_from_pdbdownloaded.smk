@@ -237,7 +237,8 @@ rule copy_alreadyprepared4fix:
 
 rule copy_alreadyprepared:
         input:
-            work_dir+"/process_provided/{stem}_pdb2pqr.pdb"
+            work_dir+"/process_provided/{stem}.pdb"
+            #work_dir+"/process_provided/{stem}_pdb2pqr.pdb"
         output:
             work_dir+"/processed/{stem,[^_]+}.pdb"
         shell:
@@ -252,7 +253,7 @@ rule copy_prepared:
         shell:
             "cp {input} {output}"
 
-#ruleorder:  copy_alreadyprepared > copy_prepared
+ruleorder:  copy_alreadyprepared > copy_prepared
 
 #extract fasta files and run hhblitz to identify antibodies
 

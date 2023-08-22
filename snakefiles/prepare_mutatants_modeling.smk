@@ -47,11 +47,6 @@ rule collect_data_befor_modelling:
     #     "notebooks/collect_data_before_modelling.r.ipynb"   
     script:
         "notebooks/collect_data_before_modelling.r.R"   
-        
-        # """
-        #     cat {input.cleaned_haps} > {output.cleaned_haps}
-        #     cat {input.evoef_data} > {output.evoef_data}
-        # """
 
 
 #### rules to prepare for EVOEF modelling
@@ -260,7 +255,8 @@ rule model_mutants_promod:
 
 rule copy_for_evaluation_static:
     input:
-        model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}_DeepRefine.pdb"
+        #model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}_DeepRefine.pdb"
+        model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.pdb"
     output:
         model = work_dir + "/evaluation/starting_structures/{pdb}={chain}={mutations,[^_]+}_1.pdb"
     shell:
@@ -447,7 +443,6 @@ def aggregate_TEMPLATE_promod_models_evoef1_with_conformers(wildcards):
 
 rule mutants_targets_templates:
     input:
-        #todolist = work_dir + "/mutants_structure_generation/TEMPLATES/todoList",
         target = aggregate_TEMPLATE_promod_models_prodigy,
         # modelling_templates = aggregate_TEMPLATE_seqs,
         #promod_models = aggregate_TEMPLATE_promod_models,
