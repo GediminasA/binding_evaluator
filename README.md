@@ -33,6 +33,20 @@
     conda activate binding_evaluator
 ```
 
+7. Checkout exemplary data git lfs:
+```bash
+    git lfs fetch
+    git lfs install
+    git lfs checkout
+```
+
+Make sure that uidmap is install ed in the system, this coud ne done like:
+ ```bash
+ sudo apt-get install uidmap
+ ```
+
+The sumbodule "covid-lt" should oint into a branch "4generalworkflow" 
+git checkout remotes/origin/4generalworkflow
 
 The target mutations can by generated as:
 ```
