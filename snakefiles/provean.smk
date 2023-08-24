@@ -32,7 +32,7 @@ rule run_PROVEAN_eval:
         FASTA_FILE=$(realpath {input.sequence})
         MUT_FILE=$(mktemp)
 
-        echo {wildcards.mutations} > $MUT_FILE
+        echo {wildcards.mutations} | tr + ';' | sed 's/-/del/g' > $MUT_FILE
 
         (cd $(dirname {input.nr}) && provean -q $FASTA_FILE -v $MUT_FILE --psiblast psiblast --cdhit cdhit --blastdbcmd blastdbcmd -d nr) > {output}
 
