@@ -1,7 +1,8 @@
 ### WILDCARDS ###
 wildcard_constraints:
     ff1 = "[a-zA-Z0-9_]+",
-    ff2 = "[a-zA-Z0-9_]+"
+    ff2 = "[a-zA-Z0-9_]+",
+    maybe_wt = "(=WT)?"
 
 ### CONTAINER BUILDING RULES ###
 rule build_openmm:
@@ -42,4 +43,26 @@ rule evaluate_openmm_ff2:
     shell:
         """
         covid-lt/bin/pdb_openmm_minimize {input.structure} --forcefield {wildcards.ff1}.xml --forcefield {wildcards.ff2}.xml --max-iterations 0 --print-forces 2> {log}  1> {output}
+        """
+
+rule run_OpenMM_eval:
+    input:
+        structure = work_dir + "/mutants_structure_generation/EVOEF/structures/{pdb}={chain}={mutations}{maybe_wt}.pdb",
+        container = "containers/openmm.sif"
+    output:
+        work_dir + "/mutants_structure_scoring/OpenMM/scores/{pdb}={chain}={mutations}{maybe_wt}.sc"
+    container:
+        "containers/openmm.sif"
+    shell:
+        """
+        (
+            sed 's/HSE/HIS/g' {input} \
+                | covid-lt/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force
+            sed 's/HSE/HIS/g' {input} \
+                | covid-lt/bin/pdb_select --chain {wildcards.partner1} \
+                | covid-lt/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force
+            sed 's/HSE/HIS/g' {input} \
+                | covid-lt/bin/pdb_select --chain {wildcards.partner2} \
+                | covid-lt/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force
+        ) > {output}
         """
