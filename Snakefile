@@ -20,6 +20,8 @@ include: "snakefiles/solubility_evaluations.smk"
 include: "snakefiles/openmm_forces.smk"
 # mutation generation entry point and utilities
 include: "snakefiles/prepare_mutatants_modeling.smk"
+# evaluation with provean
+include: "snakefiles/provean.smk"
 # prepare mutants 4 complex  evaluation
 include: "snakefiles/prepare_from_mutatans_4_eval.smk"
 
