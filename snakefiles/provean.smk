@@ -18,7 +18,7 @@ rule provean_nr:
 
 rule run_PROVEAN_eval:
     input:
-        sequence = work_dir + "/processed_info/{pdb}.fasta",
+        sequence = work_dir + "/processed_info/{pdb}_chain_{chain}.fasta",
         container = "containers/provean.sif", # to prepare the container
         nr = "data/nr/2011-08/nr.pal" # to prepare the NR database
     output:
