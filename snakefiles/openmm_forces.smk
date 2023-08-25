@@ -58,12 +58,12 @@ rule run_OpenMM_eval:
         """
         (
             sed 's/HSE/HIS/g' {input.structure} \
-                | covid-lt/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force
+                | covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force
             sed 's/HSE/HIS/g' {input.structure} \
-                | covid-lt/bin/pdb_select --chain $(cut -f 1 {input.groups} | sed 's/,//g') \
-                | covid-lt/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force
+                | covid-lt-new/bin/pdb_select --chain $(cut -f 1 {input.groups} | sed 's/,//g') \
+                | covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force
             sed 's/HSE/HIS/g' {input.structure} \
-                | covid-lt/bin/pdb_select --chain $(cut -f 2 {input.groups} | sed 's/,//g') \
-                | covid-lt/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force
+                | covid-lt-new/bin/pdb_select --chain $(cut -f 2 {input.groups} | sed 's/,//g') \
+                | covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force
         ) > {output}
         """
