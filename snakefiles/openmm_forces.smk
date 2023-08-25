@@ -67,3 +67,14 @@ rule run_OpenMM_eval:
                 | covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force) \
             | cut -f 1,2,4,6 > {output}
         """
+
+rule run_OpenMM_eval_subtract:
+    input:
+        mut = work_dir + "/mutants_structure_scoring/OpenMM/scores/{pdb}={chain}={mutations}.sc",
+        wt = work_dir + "/mutants_structure_scoring/OpenMM/scores/{pdb}={chain}=nan.sc"
+    output:
+        work_dir + "/mutants_structure_scoring/OpenMM/scores/{pdb}={chain}={mutations}.diff"
+    shell:
+        """
+        paste {input.mut} {input.wt} | awk '{{ print $1 "\t" $2 - $3 - $4 + $5 + $6 + $7 }}' > {output}
+        """
