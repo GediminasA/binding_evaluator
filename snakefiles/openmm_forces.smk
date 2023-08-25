@@ -47,11 +47,11 @@ rule evaluate_openmm_ff2:
 
 rule run_OpenMM_eval:
     input:
-        structure = work_dir + "/mutants_structure_generation/EVOEF/structures/{pdb}={chain}={mutations}{maybe_wt}.pdb",
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.pdb",
         groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
         container = "containers/openmm.sif"
     output:
-        work_dir + "/mutants_structure_scoring/OpenMM/scores/{pdb}={chain}={mutations}{maybe_wt}.sc"
+        work_dir + "/mutants_structure_scoring/OpenMM/scores/{pdb}={chain}={mutations}.sc"
     container:
         "containers/openmm.sif"
     shell:
