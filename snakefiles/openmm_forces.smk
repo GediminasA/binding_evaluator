@@ -1,8 +1,7 @@
 ### WILDCARDS ###
 wildcard_constraints:
     ff1 = "[a-zA-Z0-9_]+",
-    ff2 = "[a-zA-Z0-9_]+",
-    maybe_wt = "(=WT)?"
+    ff2 = "[a-zA-Z0-9_]+"
 
 ### CONTAINER BUILDING RULES ###
 rule build_openmm:
