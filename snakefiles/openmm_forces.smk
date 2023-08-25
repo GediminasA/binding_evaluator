@@ -56,14 +56,14 @@ rule run_OpenMM_eval:
         "containers/openmm.sif"
     shell:
         """
-        (
-            sed 's/HSE/HIS/g' {input.structure} \
-                | covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force
-            sed 's/HSE/HIS/g' {input.structure} \
+        paste \
+            <(sed 's/HSE/HIS/g' {input.structure} \
+                | covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force) \
+            <(sed 's/HSE/HIS/g' {input.structure} \
                 | covid-lt-new/bin/pdb_select --chain $(cut -f 1 {input.groups} | sed 's/,//g') \
-                | covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force
-            sed 's/HSE/HIS/g' {input.structure} \
+                | covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force) \
+            <(sed 's/HSE/HIS/g' {input.structure} \
                 | covid-lt-new/bin/pdb_select --chain $(cut -f 2 {input.groups} | sed 's/,//g') \
-                | covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force
-        ) > {output}
+                | covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force) \
+            | cut -f 1,2,4,6 > {output}
         """
