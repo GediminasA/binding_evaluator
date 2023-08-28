@@ -2,5 +2,7 @@ Bootstrap: docker
 From: debian:bookworm
 
 %post
+    echo libcifpp-data libcifpp/update boolean false | debconf-set-selections
+
     apt-get update
     apt-get install --yes dssp
