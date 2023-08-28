@@ -8,5 +8,6 @@ rule run_DSSP_eval:
         "containers/dssp.sif"
     shell:
         """
-        covid-lt/bin/pdb_add_header --id {wildcards.pdb} {input.structure} | dssp --output-format dssp /dev/stdin > {output}
+        covid-lt/bin/pdb_add_header --id {wildcards.pdb} {input.structure} \
+            | dssp --output-format dssp /dev/stdin > {output}
         """
