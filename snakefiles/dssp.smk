@@ -41,7 +41,7 @@ rule run_DSSP_complex_sum:
     input:
         work_dir + "/mutants_structure_scoring/DSSP/scores/{pdb}.sc"
     output:
-        work_dir + "/mutants_structure_scoring/DSSP/scores/{pdb}={chain}={mutations}=part.sum"
+        work_dir + "/mutants_structure_scoring/DSSP/scores/{pdb}={chain}={mutations}=complex.sum"
     shell:
         """
         cp {input} {output}
