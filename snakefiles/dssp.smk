@@ -1,6 +1,6 @@
 rule run_DSSP_part_eval:
     input:
-        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.pdb",
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}=nan.pdb",
         container = "containers/dssp.sif"
     output:
         work_dir + "/mutants_structure_scoring/DSSP/scores/{pdb}={chain}.sc"
@@ -15,7 +15,7 @@ rule run_DSSP_part_eval:
 
 rule run_DSSP_complex_eval:
     input:
-        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.pdb",
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}=nan.pdb",
         container = "containers/dssp.sif"
     output:
         work_dir + "/mutants_structure_scoring/DSSP/scores/{pdb}.sc"
