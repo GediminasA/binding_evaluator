@@ -34,9 +34,14 @@ rule run_DSSP_part_sum:
         work_dir + "/mutants_structure_scoring/DSSP/scores/part/{pdb,[^=]+}={chain,[^=]+}={mutations}.sum"
     shell:
         """
-        join -1 2 \
-            <(grep -vP '\.$' {input} | awk "{{ if( \$3 == \\"{wildcards.chain}\\" ) {{ print \$0 }} }}" ) \
-            <(echo {wildcards.mutations} | sed 's/+/\\n/g' | cut -c 2- | sed 's/.$//') > {output}
+        join \
+            <(grep -vP '\.$' {input} | awk "{{ if( \$3 == \\"{wildcards.chain}\\" ) {{ print \$2 \\" \\" substr( \$0, 36, 3 ) }} }}" | sed 's/ \+/ /g' | sort -k 1b,1) \
+            <(echo {wildcards.mutations} | sed 's/+/\\n/g' | cut -c 2- | sed 's/.$//' | sort -k 1b,1) \
+            | cut -d ' ' -f 2 \
+            | xargs -i echo +{{}} \
+            | xargs echo \
+            | sed 's/^+//' \
+            | bc > {output}
         """
 
 rule run_DSSP_complex_sum:
