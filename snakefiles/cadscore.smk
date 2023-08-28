@@ -2,9 +2,9 @@ rule run_cadscore_eval:
     input:
         mut = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.pdb",
         wt = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}=nan.pdb",
-        "containers/voronota.sif"
+        container = "containers/voronota.sif"
     output:
-        "work_dir + "/mutants_structure_scoring/CADscore/scores/{pdb}={chain}={mutations}.sc"
+        work_dir + "/mutants_structure_scoring/CADscore/scores/{pdb}={chain}={mutations}.sc"
     container:
         "containers/voronota.sif"
     shell:
