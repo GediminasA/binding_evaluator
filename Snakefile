@@ -18,6 +18,8 @@ include: "snakefiles/rosetta_binding_evaluation.smk"
 include: "snakefiles/solubility_evaluations.smk"
 # openmm forces
 include: "snakefiles/openmm_forces.smk"
+# cadscore
+include: "snakefiles/cadscore.smk"
 # mutation generation entry point and utilities
 include: "snakefiles/prepare_mutatants_modeling.smk"
 # evaluation with provean
