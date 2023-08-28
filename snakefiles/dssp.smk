@@ -29,9 +29,9 @@ rule run_DSSP_complex_eval:
 
 rule run_DSSP_part_sum:
     input:
-        work_dir + "/mutants_structure_scoring/DSSP/scores/part/{pdb,[^=]+}={chain,[^=]+}.sc"
+        work_dir + "/mutants_structure_scoring/DSSP/scores/{type}/{pdb,[^=]+}={chain,[^=]+}.sc"
     output:
-        work_dir + "/mutants_structure_scoring/DSSP/scores/part/{pdb,[^=]+}={chain,[^=]+}={mutations}.sum"
+        work_dir + "/mutants_structure_scoring/DSSP/scores/{type}/{pdb,[^=]+}={chain,[^=]+}={mutations}.sum"
     shell:
         """
         join \
@@ -42,14 +42,4 @@ rule run_DSSP_part_sum:
             | xargs echo \
             | sed 's/^+//' \
             | bc > {output}
-        """
-
-rule run_DSSP_complex_sum:
-    input:
-        work_dir + "/mutants_structure_scoring/DSSP/scores/complex/{pdb}={chain,[^=]+}.sc"
-    output:
-        work_dir + "/mutants_structure_scoring/DSSP/scores/complex/{pdb}={chain,[^=]+}={mutations}.sum"
-    shell:
-        """
-        cp {input} {output}
         """
