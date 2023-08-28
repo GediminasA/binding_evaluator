@@ -1,7 +1,8 @@
 rule run_EvoEF1_eval:
     input:
-        structure = ""
+        structure = "",
+        groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv"
     output:
         work_dir + "/mutants_structure_scoring/EvoEF1/scores/{pdb}={chain}={mutations}.sc"
     shell:
-        "EvoEF --command ComputeBinding --split $(echo $BASE | cut -d _ -f 3-4 | sed 's/_/,/g') --pdb {input.structure} > {output}"
+        "EvoEF --command ComputeBinding --split $(cat {input.groups} | cut -f 1,2 | sed 's/,//' | sed 's/\+/,/') --pdb {input.structure} > {output}"
