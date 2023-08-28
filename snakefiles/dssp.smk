@@ -1,9 +1,9 @@
 rule run_DSSP_part_eval:
     input:
-        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}=nan.pdb",
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb,[^=]+}={chain,[^=]+}=nan.pdb",
         container = "containers/dssp.sif"
     output:
-        work_dir + "/mutants_structure_scoring/DSSP/scores/{pdb}={chain}.sc"
+        work_dir + "/mutants_structure_scoring/DSSP/scores/part/{pdb,[^=]+}={chain,[^=]+}.sc"
     container:
         "containers/dssp.sif"
     shell:
@@ -15,10 +15,10 @@ rule run_DSSP_part_eval:
 
 rule run_DSSP_complex_eval:
     input:
-        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}=nan.pdb",
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb,[^=]+}={chain,[^=]+}=nan.pdb",
         container = "containers/dssp.sif"
     output:
-        work_dir + "/mutants_structure_scoring/DSSP/scores/{pdb}.sc"
+        work_dir + "/mutants_structure_scoring/DSSP/scores/complex/{pdb,[^=]+}={chain,[^=]+}.sc"
     container:
         "containers/dssp.sif"
     shell:
@@ -29,9 +29,9 @@ rule run_DSSP_complex_eval:
 
 rule run_DSSP_part_sum:
     input:
-        work_dir + "/mutants_structure_scoring/DSSP/scores/{pdb}={chain}.sc"
+        work_dir + "/mutants_structure_scoring/DSSP/scores/part/{pdb,[^=]+}={chain,[^=]+}.sc"
     output:
-        work_dir + "/mutants_structure_scoring/DSSP/scores/{pdb}={chain}={mutations}=part.sum"
+        work_dir + "/mutants_structure_scoring/DSSP/scores/part/{pdb,[^=]+}={chain,[^=]+}={mutations}.sum"
     shell:
         """
         cp {input} {output}
@@ -39,9 +39,9 @@ rule run_DSSP_part_sum:
 
 rule run_DSSP_complex_sum:
     input:
-        work_dir + "/mutants_structure_scoring/DSSP/scores/{pdb}.sc"
+        work_dir + "/mutants_structure_scoring/DSSP/scores/complex/{pdb}={chain,[^=]+}.sc"
     output:
-        work_dir + "/mutants_structure_scoring/DSSP/scores/{pdb}={chain}={mutations}=complex.sum"
+        work_dir + "/mutants_structure_scoring/DSSP/scores/complex/{pdb}={chain,[^=]+}={mutations}.sum"
     shell:
         """
         cp {input} {output}
