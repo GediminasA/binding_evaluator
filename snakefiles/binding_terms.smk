@@ -15,11 +15,15 @@ rule collect_binding_terms:
     shell:
         """
         (
-            echo label,CADSCORE,dS,SA_com,SA_part
-            ls -1 {work_dir}/mutants_structure_scoring/OpenMM/scores/*.sc \
-                | head -n 1 \
-                | xargs cut -f 1
-            echo SC
+            (
+                echo label,CADscore,dS,SA_com,SA_part
+                ls -1 {work_dir}/mutants_structure_scoring/OpenMM/scores/*.sc \
+                    | head -n 1 \
+                    | xargs cut -f 1
+                echo SC
+            ) \
+                | xargs echo \
+                | sed 's/ /,/g'
             ls -1 {work_dir}/mutants_structure_scoring/CADscore/scores/*.sc \
                 | xargs -i basename {{}} .sc \
                 | grep -v '=nan$' \
