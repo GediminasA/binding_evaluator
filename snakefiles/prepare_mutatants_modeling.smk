@@ -252,6 +252,16 @@ rule model_mutants_promod:
         PYTHONPATH=covid-lt covid-lt/bin/promod-model --simulate --trim --template {input.structure} --sequences {input.sequence} 1> {output.model} 2> {log} 
         """ 
 
+rule model_mutants_faspr:
+    input:
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.pdb",
+        container = "containers/faspr.sif"
+    output:
+        work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations}.pdb"
+    container:
+        "containers/faspr.sif"
+    shell:
+        "FASPR -i {input.structure} -o {output}"
 
 rule copy_for_evaluation_static:
     input:
