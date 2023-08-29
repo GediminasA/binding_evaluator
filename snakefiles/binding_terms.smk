@@ -15,14 +15,14 @@ rule collect_binding_terms:
     shell:
         """
         (
-            echo label,CADSCORE,SA_com,SA_part,OpenMM,SC
+            echo label,CADSCORE,dS,SA_com,SA_part,OpenMM,SC
             ls -1 {work_dir}/mutants_structure_scoring/CADscore/scores/*.sc \
                 | xargs -i basename {{}} .sc \
                 | grep -v '=nan$' \
                 | while read LABEL
                   do
                     echo $LABEL
-                    cat {work_dir}/mutants_structure_scoring/CADscore/scores/$LABEL.sc # for now
+                    awk '{{print $5 " " $7 - $6}}' < {work_dir}/mutants_structure_scoring/CADscore/scores/$LABEL.sc
                     cat {work_dir}/mutants_structure_scoring/DSSP/scores/complex/$LABEL.sum
                     cat {work_dir}/mutants_structure_scoring/DSSP/scores/part/$LABEL.sum
                     cat {work_dir}/mutants_structure_scoring/OpenMM/scores/$LABEL.diff
