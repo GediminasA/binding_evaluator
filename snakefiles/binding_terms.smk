@@ -35,6 +35,8 @@ rule collect_binding_terms:
                     cat {work_dir}/mutants_structure_scoring/DSSP/scores/part/$LABEL.sum
                     cut -f 2 {work_dir}/mutants_structure_scoring/OpenMM/scores/$LABEL.diff
                     tail -n 1 {work_dir}/mutants_structure_scoring/PROVEAN/scores/$LABEL.sc | cut -f 2
-                  done
+                  done \
+                | xargs echo \
+                | sed 's/ /,/g'
         ) > {output}
         """
