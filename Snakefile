@@ -26,6 +26,8 @@ include: "snakefiles/prepare_mutatants_modeling.smk"
 include: "snakefiles/binding_terms.smk"
 # evaluation with DSSP
 include: "snakefiles/dssp.smk"
+# evaluation with EvoEF1
+include: "snakefiles/evoef1_term.smk"
 # evaluation with provean
 include: "snakefiles/provean.smk"
 # prepare mutants 4 complex  evaluation
