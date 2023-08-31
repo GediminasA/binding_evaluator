@@ -22,6 +22,8 @@ include: "snakefiles/openmm_forces.smk"
 include: "snakefiles/cadscore.smk"
 # mutation generation entry point and utilities
 include: "snakefiles/prepare_mutatants_modeling.smk"
+# binding terms
+include: "snakefiles/binding_terms.smk"
 # evaluation with DSSP
 include: "snakefiles/dssp.smk"
 # evaluation with provean
