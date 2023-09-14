@@ -20,7 +20,7 @@ rule collect_binding_terms:
                 ls -1 {work_dir}/mutants_structure_scoring/OpenMM/scores/*.sc \
                     | head -n 1 \
                     | xargs cut -f 1
-                echo SC
+                echo CS
             ) \
                 | xargs echo \
                 | sed 's/ /,/g'
