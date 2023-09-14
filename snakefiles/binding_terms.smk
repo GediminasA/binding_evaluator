@@ -43,12 +43,13 @@ rule collect_binding_terms:
 
 rule predict_ddG:
     input:
-        work_dir + "/rezults/mutation_terms.csv"
+        table = work_dir + "/rezults/mutation_terms.csv",
+        container = "containers/r-cran.sif"
     output:
         work_dir + "/rezults/mutation_terms_predicted.csv"
     container:
         "containers/r-cran.sif"
     shell:
         """
-        covid-lt-new/bin/random-forest {input} --input-format csv --input-model covid-lt-new/binding-evaluator-model.RData > {output}
+        covid-lt-new/bin/random-forest {input.table} --input-format csv --input-model covid-lt-new/binding-evaluator-model.RData > {output}
         """
