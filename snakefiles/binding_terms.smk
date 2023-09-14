@@ -40,3 +40,15 @@ rule collect_binding_terms:
                 | sed 's/ /,/g'
         ) > {output}
         """
+
+rule predict_ddG:
+    input:
+        work_dir + "/rezults/mutation_terms.csv"
+    output:
+        work_dir + "/rezults/mutation_terms_predicted.csv"
+    container:
+        "containers/r-cran.sif"
+    shell:
+        """
+        covid-lt-new/bin/random-forest {input} --input-format csv --input-model covid-lt-new/binding-evaluator-model.RData > {output}
+        """
