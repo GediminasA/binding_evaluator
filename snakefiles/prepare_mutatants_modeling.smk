@@ -80,10 +80,10 @@ rule get_template_mutation_data:
     output:
         work_dir+"/mutants_sequence_generation/{pdb,[^=]+}={seqtempl,[^=]+}=template_mutation_data__4models.csv",
         work_dir+"/mutants_sequence_generation/{pdb,[^=]+}={seqtempl,[^=]+}=template_mutation_data__cleanhap.csv"
-    # notebook:
-    #   "notebooks/get_template_mutation_data.r.ipynb"   
-    script:
-        "notebooks/get_template_mutation_data.r.R"   
+    notebook:
+        "notebooks/get_template_mutation_data.r.ipynb"   
+    #script:
+    #     "notebooks/get_template_mutation_data.r.R"   
 
 #### rules to run EVOEF modelling
 
