@@ -260,7 +260,7 @@ rule model_mutants_promod:
         then
             PYTHONPATH=covid-lt covid-lt/bin/promod-model --simulate --trim --template {input.structure} --sequences {input.sequence} 1> {output.model} 2> {log}
         else
-            PYTHONPATH=covid-lt covid-lt/bin/promod-fix-pdb --do-not-fill-gaps --simulate --trim {input.evoef2_model} 1> {output.model} 2> {log}
+            PYTHONPATH=covid-lt-new covid-lt-new/bin/promod-fix-pdb --do-not-fill-gaps --simulate --trim {input.evoef2_model} 1> {output.model} 2> {log}
         fi
         """ 
 
