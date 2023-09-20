@@ -266,7 +266,7 @@ rule model_mutants_promod:
 
 rule model_mutants_evoef2:
     input:
-        "containers/evoef.sif"
+        "containers/evoef.sif",
         structure = work_dir + "/processed/{pdb}.pdb"
     output:
         model = work_dir + "/mutants_structure_generation/TEMPLATES/evoef2_models/{pdb}={chain}={mutations,[^_]+}.pdb"
