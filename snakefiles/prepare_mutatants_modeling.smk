@@ -245,8 +245,7 @@ rule model_mutants_promod:
     input:
         "containers/promod.sif",
         structure = work_dir+"/processed/{pdb}.pdb",
-        sequence = work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{pdb}={chain}={mutations}.fasta",
-        evoef2_model = evoef2_model_if_simple_mutations
+        sequence = work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{pdb}={chain}={mutations}.fasta"
     output:
         model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}.pdb"
     log:
@@ -256,12 +255,7 @@ rule model_mutants_promod:
     shell:
         """
         export OPENMM_CPU_THREADS={threads}
-        if [ -z "{input.evoef2_model}" ]
-        then
-            PYTHONPATH=covid-lt covid-lt/bin/promod-model --simulate --trim --template {input.structure} --sequences {input.sequence} 1> {output.model} 2> {log}
-        else
-            PYTHONPATH=covid-lt-new covid-lt-new/bin/promod-fix-pdb --do-not-fill-gaps --simulate --trim {input.evoef2_model} 1> {output.model} 2> {log}
-        fi
+        PYTHONPATH=covid-lt covid-lt/bin/promod-model --simulate --trim --template {input.structure} --sequences {input.sequence} 1> {output.model} 2> {log}
         """ 
 
 rule model_mutants_evoef2:
@@ -304,6 +298,20 @@ rule model_mutants_promod_after_faspr:
         "containers/promod.sif"
     shell:
         "PYTHONPATH=covid-lt-new covid-lt-new/bin/promod-fix-pdb --do-not-fill-gaps --simulate {input.structure} > {output}"
+
+def select_model_method(wildcards):
+    if wildcards.mutations == "nan" or wildcards.mutations.count("-") or wildcards.mutations.count("ins"):
+        return [work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/" + wildcards.pdb + "=" + wildcards.chain + "=" + wildcards.mutations + ".pdb"]]
+    else:
+        return [work_dir + "/mutants_structure_generation/TEMPLATES/evoef2_models/" + wildcards.pdb + "=" + wildcards.chain + "=" + wildcards.mutations + ".pdb"]
+
+rule model_mutants_all:
+    input:
+        select_model_method
+    output:
+        work_dir + "/mutants_structure_generation/TEMPLATES/all_models/{pdb}={chain}={mutations}.pdb"
+    shell:
+        "cp {input} {output}"
 
 rule copy_for_evaluation_static:
     input:
