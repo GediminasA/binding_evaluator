@@ -252,6 +252,19 @@ rule model_mutants_promod:
         PYTHONPATH=covid-lt covid-lt/bin/promod-model --simulate --trim --template {input.structure} --sequences {input.sequence} 1> {output.model} 2> {log} 
         """ 
 
+rule model_mutants_evoef2:
+    input:
+        "containers/evoef.sif"
+        structure = work_dir + "/processed/{pdb}.pdb"
+    output:
+        model = work_dir + "/mutants_structure_generation/TEMPLATES/evoef2_models/{pdb}={chain}={mutations,[^_]+}.pdb"
+    log:
+        work_dir + "/mutants_structure_generation/TEMPLATES/evoef2_models/{pdb}={chain}={mutations}.log"
+    container: "containers/evoef.sif"
+    shell:
+        """
+        bin/EvoEF2-mutate --mutation {wildcards.mutations} {input.structure} > {output} 2> {log}
+        """
 
 rule copy_for_evaluation_static:
     input:
