@@ -4,6 +4,7 @@ def aggregate_mutation_stems(wildcards):
     return expand(work_dir + "/mutants_structure_scoring/CADscore/scores/{stem}.sc", stem=stems) + \
         expand(work_dir + "/mutants_structure_scoring/DSSP/scores/complex/{stem}.sum", stem=stems) + \
         expand(work_dir + "/mutants_structure_scoring/DSSP/scores/part/{stem}.sum", stem=stems) + \
+        expand(work_dir + "/mutants_structure_scoring/EvoEF1/scores/{stem}.diff", stem=stems) + \
         expand(work_dir + "/mutants_structure_scoring/OpenMM/scores/{stem}.diff", stem=stems) + \
         expand(work_dir + "/mutants_structure_scoring/PROVEAN/scores/{stem}.sc", stem=stems)
 
@@ -16,11 +17,11 @@ rule collect_binding_terms:
         """
         (
             (
-                echo label,CADscore,dS,SA_com,SA_part
+                echo label,CADscore,dS,SA_com,SA_part,ddG_EvoEF
                 ls -1 {work_dir}/mutants_structure_scoring/OpenMM/scores/*.sc \
                     | head -n 1 \
                     | xargs cut -f 1
-                echo SC
+                echo CS
             ) \
                 | xargs echo \
                 | sed 's/ /,/g'
@@ -33,6 +34,7 @@ rule collect_binding_terms:
                     awk '{{print $5 " " $7 - $6}}' < {work_dir}/mutants_structure_scoring/CADscore/scores/$LABEL.sc
                     cat {work_dir}/mutants_structure_scoring/DSSP/scores/complex/$LABEL.sum
                     cat {work_dir}/mutants_structure_scoring/DSSP/scores/part/$LABEL.sum
+                    cat {work_dir}/mutants_structure_scoring/EvoEF1/scores/$LABEL.diff
                     cut -f 2 {work_dir}/mutants_structure_scoring/OpenMM/scores/$LABEL.diff
                     tail -n 1 {work_dir}/mutants_structure_scoring/PROVEAN/scores/$LABEL.sc | cut -f 2
                   done \
