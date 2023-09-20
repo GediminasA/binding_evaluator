@@ -275,7 +275,7 @@ rule model_mutants_evoef2:
     container: "containers/evoef.sif"
     shell:
         """
-        covid-lt-new/bin/EvoEF2-mutate --mutation {wildcards.mutations} --ignore-mismatching {input.structure} > {output} 2> {log}
+        covid-lt-new/bin/EvoEF2-mutate --mutation $(echo {wildcards.mutations} | tr + ,) --ignore-mismatching {input.structure} > {output} 2> {log}
         """
 
 rule copy_for_evaluation_static:
