@@ -239,7 +239,7 @@ def evoef2_model_if_simple_mutations(wildcards):
     if wildcards.mutations == "nan" or wildcards.mutations.count("-") or wildcards.mutations.count("ins"):
         return []
     else:
-        return [work_dir + "/mutants_structure_generation/TEMPLATES/evoef2_models/{wildcards.pdb}={wildcards.chain}={wildcards.mutations}.pdb"]
+        return [work_dir + "/mutants_structure_generation/TEMPLATES/evoef2_models/" + wildcards.pdb + "=" + wildcards.chain + "=" + wildcards.mutations + ".pdb"]
 
 rule model_mutants_promod:
     input:
