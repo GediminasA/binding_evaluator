@@ -252,6 +252,28 @@ rule model_mutants_promod:
         PYTHONPATH=covid-lt covid-lt/bin/promod-model --simulate --trim --template {input.structure} --sequences {input.sequence} 1> {output.model} 2> {log} 
         """ 
 
+rule model_mutants_faspr:
+    input:
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.pdb",
+        container = "containers/faspr.sif"
+    output:
+        work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations}.pdb"
+    container:
+        "containers/faspr.sif"
+    shell:
+        "FASPR -i {input.structure} -o {output}"
+
+# This rule is needed to add hydrogens to FASPR-optimized structures as FASPR does not do that itself
+rule model_mutants_promod_after_faspr:
+    input:
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations}.pdb",
+        container = "containers/promod.sif"
+    output:
+        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models_after_faspr/{pdb}={chain}={mutations}.pdb"
+    container:
+        "containers/promod.sif"
+    shell:
+        "PYTHONPATH=covid-lt-new covid-lt-new/bin/promod-fix-pdb --do-not-fill-gaps --simulate {input.structure} > {output}"
 
 rule copy_for_evaluation_static:
     input:
