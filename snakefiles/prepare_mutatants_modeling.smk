@@ -303,7 +303,7 @@ rule model_mutants_promod_after_faspr:
 
 def select_model_method(wildcards):
     if wildcards.mutations == "nan" or wildcards.mutations.count("-") or wildcards.mutations.count("ins"):
-        return [work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/" + wildcards.pdb + "=" + wildcards.chain + "=" + wildcards.mutations + ".pdb"]]
+        return [work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/" + wildcards.pdb + "=" + wildcards.chain + "=" + wildcards.mutations + ".pdb"]
     else:
         return [work_dir + "/mutants_structure_generation/TEMPLATES/evoef2_models/" + wildcards.pdb + "=" + wildcards.chain + "=" + wildcards.mutations + ".pdb"]
 
