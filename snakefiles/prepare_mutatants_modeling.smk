@@ -235,12 +235,6 @@ def aggregate_TEMPLATE_promod_models_ready_4_eval_with_conformers(wildcards):
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(work_dir + "/evaluation/starting_structures/{stem}_{id}.pdb",stem=stems, id = range(1, nconf+2)))
 
-def evoef2_model_if_simple_mutations(wildcards):
-    if wildcards.mutations == "nan" or wildcards.mutations.count("-") or wildcards.mutations.count("ins"):
-        return []
-    else:
-        return [work_dir + "/mutants_structure_generation/TEMPLATES/evoef2_models/" + wildcards.pdb + "=" + wildcards.chain + "=" + wildcards.mutations + ".pdb"]
-
 rule model_mutants_promod:
     input:
         "containers/promod.sif",
