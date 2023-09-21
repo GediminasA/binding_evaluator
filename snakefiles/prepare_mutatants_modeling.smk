@@ -257,7 +257,7 @@ rule model_mutants_evoef2:
         "containers/evoef.sif",
         structure = work_dir + "/processed/{pdb}.pdb"
     output:
-        model = work_dir + "/mutants_structure_generation/TEMPLATES/evoef2_models/{pdb}={chain}={mutations,[^_]+}_woH.pdb"
+        model = work_dir + "/mutants_structure_generation/TEMPLATES/evoef2_models/{pdb}={chain}={mutations,[^_]+}_bare.pdb"
     log:
         work_dir + "/mutants_structure_generation/TEMPLATES/evoef2_models/{pdb}={chain}={mutations}.log"
     container: "containers/evoef.sif"
@@ -272,7 +272,7 @@ rule model_mutants_evoef2:
 
 rule model_mutants_evoef2_addH:
     input:
-        work_dir + "/mutants_structure_generation/TEMPLATES/evoef2_models/{pdb}={chain}={mutations,[^_]+}_woH_pdb2pqr.pdb"
+        work_dir + "/mutants_structure_generation/TEMPLATES/evoef2_models/{pdb}={chain}={mutations,[^_]+}_bare_pdb2pqr.pdb"
     output:
         work_dir + "/mutants_structure_generation/TEMPLATES/evoef2_models/{pdb}={chain}={mutations,[^_]+}.pdb"
     shell:
