@@ -174,7 +174,7 @@ rule pdb2pqr:
         "{stem}_pdb2pqr.log",
     shell:
         """
-        grep -e "^SEQRES" {input} > {output.pdb}
+        grep -e "^SEQRES" {input} > {output.pdb} || true
         pdb2pqr30 --drop-water --include-header  {input} {output.pqr}  --pdb-output {params.pdb} &> {log}
         cat {params.pdb} >> {output.pdb}
         rm {params.pdb}
