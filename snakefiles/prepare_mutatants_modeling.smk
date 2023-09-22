@@ -223,7 +223,7 @@ def aggregate_TEMPLATE_seqs(wildcards):
 def aggregate_TEMPLATE_promod_models(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
-    return(expand(work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{stem}.pdb",stem=stems))
+    return(expand(work_dir + "/mutants_structure_generation/TEMPLATES/all_models/{stem}.pdb",stem=stems))
 
 def aggregate_TEMPLATE_promod_models_ready_4_eval(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
@@ -317,8 +317,8 @@ rule model_mutants_all:
 
 rule copy_for_evaluation_static:
     input:
-        #model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}_DeepRefine.pdb"
-        model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.pdb"
+        #model = work_dir + "/mutants_structure_generation/TEMPLATES/all_models/{pdb}={chain}={mutations}_DeepRefine.pdb"
+        model = work_dir + "/mutants_structure_generation/TEMPLATES/all_models/{pdb}={chain}={mutations}.pdb"
     output:
         model = work_dir + "/evaluation/starting_structures/{pdb}={chain}={mutations,[^_]+}_1.pdb"
     shell:
@@ -400,8 +400,8 @@ rule generate_conformations_GALAXY_part2:
 
 rule copy_for_evaluation_dynamic:
     input:
-        model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{stem}_{id}_GalaxyRefineComplex.pdb"
-        #model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{stem}_{id}_CABS_DeepRefine.pdb"
+        model = work_dir + "/mutants_structure_generation/TEMPLATES/all_models/{stem}_{id}_GalaxyRefineComplex.pdb"
+        #model = work_dir + "/mutants_structure_generation/TEMPLATES/all_models/{stem}_{id}_CABS_DeepRefine.pdb"
     output:
         model = work_dir + "/evaluation/starting_structures/{stem}_{id,[^1]\d?|1\d+}.pdb" # one is reserved for static
     shell:
