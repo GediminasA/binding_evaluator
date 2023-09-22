@@ -37,7 +37,9 @@ rule collect_binding_terms:
                         cat {work_dir}/mutants_structure_scoring/DSSP/scores/part/$LABEL.sum
                         cat {work_dir}/mutants_structure_scoring/EvoEF1/scores/$LABEL.diff
                         cut -f 2 {work_dir}/mutants_structure_scoring/OpenMM/scores/$LABEL.diff
-                        tail -n 1 {work_dir}/mutants_structure_scoring/PROVEAN/scores/$LABEL.sc | cut -f 2
+                        tail -n 1 {work_dir}/mutants_structure_scoring/PROVEAN/scores/$LABEL.sc \
+                            | cut -f 2 \
+                            | sed 's/No variations entered/NA/'
                     ) | xargs echo \
                       | sed 's/ /,/g'
                   done
