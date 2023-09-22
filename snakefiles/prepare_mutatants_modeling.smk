@@ -2,6 +2,7 @@
 import pandas as pd 
 import tempfile
 df_muts = pd.read_csv(config["mutants"])
+df_muts = df_muts.dropna()
 pdb_template_stems = list(set(df_muts.PDB))
 seqs_4mutations = list(set([str(s).strip() for s in df_muts.Template]))
 pair4mut = ["=".join(l) for l in  list(set(list(zip([str(s).strip() for s in df_muts.PDB],[str(s).strip() for s in df_muts.Template]))))]
