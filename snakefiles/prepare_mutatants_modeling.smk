@@ -241,16 +241,28 @@ rule model_mutants_promod:
         structure = work_dir+"/processed/{pdb}.pdb",
         sequence = work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{pdb}={chain}={mutations}.fasta" 
     output:
-        model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}.pdb"
+        model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_faspr.pdb"
     log:
         work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.log"
-    container: "containers/promod.sif"
+    container:
+        "containers/promod.sif"
     threads: 8
     shell:
         """
         export OPENMM_CPU_THREADS={threads}
-        PYTHONPATH=covid-lt covid-lt/bin/promod-model --simulate --trim --template {input.structure} --sequences {input.sequence} 1> {output.model} 2> {log} 
-        """ 
+        PYTHONPATH=covid-lt covid-lt/bin/promod-model --simulate --trim --template {input.structure} --sequences {input.sequence} > {output.model} 2> {log}
+        """
+
+rule model_mutants_promod_faspr:
+    input:
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_faspr.pdb",
+        "containers/faspr.sif"
+    output:
+        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}.pdb"
+    container:
+        "containers/faspr.sif"
+    shell:
+        "FASPR -i {input.structure} -o {output}"
 
 rule model_mutants_faspr:
     input:
