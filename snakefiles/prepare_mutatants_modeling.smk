@@ -256,7 +256,7 @@ rule model_mutants_promod:
 rule model_mutants_promod_faspr:
     input:
         structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_faspr.pdb",
-        "containers/faspr.sif"
+        container = "containers/faspr.sif"
     output:
         work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}.pdb"
     log:
