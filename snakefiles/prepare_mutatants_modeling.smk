@@ -259,10 +259,12 @@ rule model_mutants_promod_faspr:
         "containers/faspr.sif"
     output:
         work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}.pdb"
+    log:
+        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.log"
     container:
         "containers/faspr.sif"
     shell:
-        "FASPR -i {input.structure} -o {output}"
+        "FASPR -i {input.structure} -o {output} 2>&1 | cat >> {log}"
 
 rule model_mutants_faspr:
     input:
