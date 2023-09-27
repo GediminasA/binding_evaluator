@@ -57,6 +57,7 @@ A workflow assesing anaergetics with promod -> evoef + prodigy can by invoked li
 
 ```
 snakemake --profile local --configfile configs/antibody.yaml  -k get_summary_of_binding
+snakemake --profile local --configfile configs/antibody.yaml  -k extract_results_ddg
 ```
 
 Some explanations:
