@@ -1,13 +1,3 @@
-### CONTAINER BUILDING RULES ###
-rule build_freesasa:
-    input:
-        "containers/freesas.def"
-    output:
-        "containers/freesas.sif"
-    shell:
-        "apptainer build {output} {input}"
-
-
 
 
 ### EVALUATION RULES ###

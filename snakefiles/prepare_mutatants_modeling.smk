@@ -2,6 +2,7 @@
 import pandas as pd 
 import tempfile
 df_muts = pd.read_csv(config["mutants"])
+df_muts = df_muts.dropna()
 pdb_template_stems = list(set(df_muts.PDB))
 seqs_4mutations = list(set([str(s).strip() for s in df_muts.Template]))
 pair4mut = ["=".join(l) for l in  list(set(list(zip([str(s).strip() for s in df_muts.PDB],[str(s).strip() for s in df_muts.Template]))))]
@@ -80,10 +81,10 @@ rule get_template_mutation_data:
     output:
         work_dir+"/mutants_sequence_generation/{pdb,[^=]+}={seqtempl,[^=]+}=template_mutation_data__4models.csv",
         work_dir+"/mutants_sequence_generation/{pdb,[^=]+}={seqtempl,[^=]+}=template_mutation_data__cleanhap.csv"
-    # notebook:
-    #   "notebooks/get_template_mutation_data.r.ipynb"   
-    script:
-        "notebooks/get_template_mutation_data.r.R"   
+    notebook:
+        "notebooks/get_template_mutation_data.r.ipynb"   
+    #script:
+    #     "notebooks/get_template_mutation_data.r.R"   
 
 #### rules to run EVOEF modelling
 

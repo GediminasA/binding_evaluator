@@ -11,8 +11,11 @@ PDB_TEMPLATE <- as.character(unlist(dfmap$PDB))
 names(PDB_TEMPLATE) <- as.character(unlist(dfmap$TEMPLATE)) #map template to PDB map
 chain <- dfmap$CHAIN[[1]]
 
-df <- fread(snakemake@input$data)
+df <- fread(snakemake@input$data) %>%
+    filter(PDB == snakemake@wildcards$pdb)
 df$ID <- 1:nrow(df)
+df
+
 
 if (snakemake@wildcards$seqtempl != "nan")
     {
@@ -31,13 +34,15 @@ if (snakemake@wildcards$seqtempl != "nan")
 
     df3 <- df2 %>%
         filter(!is.na(POSITION_PDB)) %>%
-        #where deletions are - sbstityue to alanine for methods like foldx or EVOEF
+        #where deletions are - sbstityue to alanine for methods like foldx or EVOEF - this 
         mutate(SUBalltypes  = SUB) %>%
         mutate(SUB = ifelse(SUB=='-',"A",SUB)) %>% # for methods like foldX or EVOEF that cannot deal with deletions - use it
         mutate(MutationPDB = paste(WT,POSITION_PDB,SUB,sep="")) %>%
         mutate(MutationPDBalltypes = paste(WT,POSITION_PDB,SUBalltypes,sep="")) %>% 
         mutate(MutationPDBwChain = paste(WT,chain,POSITION_PDB,SUB,sep="")) %>%
         mutate(MutationPDBalltypeswChain = paste(WT,chain,POSITION_PDB,SUBalltypes,sep=""))
+
+
 
     df4 <- df3 %>%
         group_by(ID) %>%
@@ -97,15 +102,24 @@ if (snakemake@wildcards$seqtempl != "nan") {
     fwrite(x = df4,file = snakemake@output[[1]])   
 }
 
+
 # general info
 if (snakemake@wildcards$seqtempl != "nan") {
     dfhap <- df2 %>%
-        arrange(ID,as.numeric(POSITION_TEMPLATE),WT,SUB) %>%
+         arrange(ID,as.numeric(POSITION_TEMPLATE),WT,SUB) %>%
          group_by(ID) %>%
          summarise(Haplotype = paste(Mutations,collapse=","))
+    dfcovered <- df2 %>%
+         arrange(ID,as.numeric(POSITION_TEMPLATE),WT,SUB) %>%
+         filter(!is.na(POSITION_PDB)) %>%
+         group_by(ID) %>%
+         summarise(`Covered Mutations` = paste(Mutations,collapse=","))
     df_withhap <- df %>%
-        left_join(dfhap, by="ID")
+        left_join(dfhap, by="ID") %>%
+        left_join(dfcovered, by="ID")
     fwrite(x = df_withhap, file = snakemake@output[[2]])
 } else {
     cat(NULL,file=snakemake@output[[2]])
 }
+
+# Haplotype differ from Muations by having a sorted positions - not redundant
