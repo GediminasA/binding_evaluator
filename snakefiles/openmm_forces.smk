@@ -43,3 +43,37 @@ rule evaluate_openmm_ff2:
         """
         covid-lt/bin/pdb_openmm_minimize {input.structure} --forcefield {wildcards.ff1}.xml --forcefield {wildcards.ff2}.xml --max-iterations 0 --print-forces 2> {log}  1> {output}
         """
+
+rule run_OpenMM_eval:
+    input:
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models_after_faspr/{pdb}={chain}={mutations}.pdb",
+        groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
+        container = "containers/openmm.sif"
+    output:
+        work_dir + "/mutants_structure_scoring/OpenMM/scores/{pdb}={chain}={mutations}.sc"
+    container:
+        "containers/openmm.sif"
+    shell:
+        """
+        paste \
+            <(sed 's/HSE/HIS/g' {input.structure} \
+                | covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force) \
+            <(sed 's/HSE/HIS/g' {input.structure} \
+                | covid-lt-new/bin/pdb_select --chain $(cut -f 1 {input.groups} | sed 's/,//g') \
+                | covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force) \
+            <(sed 's/HSE/HIS/g' {input.structure} \
+                | covid-lt-new/bin/pdb_select --chain $(cut -f 2 {input.groups} | sed 's/,//g') \
+                | covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --forcefield implicit/gbn2.xml --print-forces --max-iterations 0 --force-unit kcal/mol --split-nonbonded-force) \
+            | cut -f 1,2,4,6 > {output}
+        """
+
+rule run_OpenMM_eval_subtract:
+    input:
+        mut = work_dir + "/mutants_structure_scoring/OpenMM/scores/{pdb}={chain}={mutations}.sc",
+        wt = work_dir + "/mutants_structure_scoring/OpenMM/scores/{pdb}={chain}=nan.sc"
+    output:
+        work_dir + "/mutants_structure_scoring/OpenMM/scores/{pdb}={chain}={mutations}.diff"
+    shell:
+        """
+        paste {input.mut} {input.wt} | awk '{{ print $1 "\t" $2 - $3 - $4 + $5 + $6 + $7 }}' > {output}
+        """

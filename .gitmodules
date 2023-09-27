@@ -1,3 +1,6 @@
 [submodule "covid-lt"]
 	path = covid-lt
 	url = git@github.com:merkys/covid-lt.git
+[submodule "covid-lt-new"]
+	path = covid-lt-new
+	url = git@github.com:merkys/covid-lt.git
