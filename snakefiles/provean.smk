@@ -31,10 +31,11 @@ rule run_PROVEAN_eval:
 
         FASTA_FILE=$(realpath {input.sequence})
         MUT_FILE=$(mktemp)
-
-        echo {wildcards.mutations} | tr + ';' | sed 's/-/del/g' > $MUT_FILE
+        echo {wildcards.mutations}  | sed 's/-/del/g' | tr + '\n' > $MUT_FILE
 
         (cd $(dirname {input.nr}) && provean -q $FASTA_FILE -v $MUT_FILE --psiblast psiblast --cdhit cdhit --blastdbcmd blastdbcmd -d nr) > {output}
 
         rm $MUT_FILE
+
         """
+        #echo "E144del;F145del" > $MUT_FILE
