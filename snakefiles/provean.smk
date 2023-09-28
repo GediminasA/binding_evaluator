@@ -25,6 +25,7 @@ rule run_PROVEAN_eval:
         work_dir + "/mutants_structure_scoring/PROVEAN/scores/{pdb}={chain}={mutations}.sc"
     container:
         "containers/provean.sif"
+    threads: 4
     shell:
         """
         mkdir --parents $(dirname {output})
@@ -33,9 +34,10 @@ rule run_PROVEAN_eval:
         MUT_FILE=$(mktemp)
         echo {wildcards.mutations}  | sed 's/-/del/g' | tr + '\n' > $MUT_FILE
 
-        (cd $(dirname {input.nr}) && provean -q $FASTA_FILE -v $MUT_FILE --psiblast psiblast --cdhit cdhit --blastdbcmd blastdbcmd -d nr) > {output}
+        (cd $(dirname {input.nr}) && provean --num_threads {threads} -q $FASTA_FILE -v $MUT_FILE --psiblast psiblast --cdhit cdhit --blastdbcmd blastdbcmd -d nr) > {output}
 
         rm $MUT_FILE
+        sleep 1
 
         """
         #echo "E144del;F145del" > $MUT_FILE

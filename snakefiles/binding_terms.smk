@@ -35,10 +35,10 @@ rule merge_colected_binding_terms:
         aggregate_mutation_stems4dgg
     output:
         table = work_dir + "/rezults/mutation_terms_4ddg.csv"
-    # notebook:
-    #     "notebooks/merge_ddgrez.r.ipynb"
-    script:
-        "notebooks/merge_ddgrez.r.R"
+    notebook:
+        "notebooks/merge_ddgrez.r.ipynb"
+    # script:
+    #     "notebooks/merge_ddgrez.r.R"
 
 rule collect_binding_terms:
     input:
