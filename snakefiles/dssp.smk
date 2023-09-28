@@ -25,7 +25,7 @@ rule run_DSSP_complex_eval:
     shell:
         """
         covid-lt/bin/pdb_add_header --id {wildcards.pdb} {input.structure} \
-            | covid-lt/bin/pdb_select --chain $(cut -f 2 {input.groups} | tr -d ,) \
+            | covid-lt/bin/pdb_select --chain $(cut -f 1,2 {input.groups} | sed 's/[\t,]//g') \
             | dssp --output-format dssp /dev/stdin > {output}
         """
 
