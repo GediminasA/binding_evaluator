@@ -1,7 +1,0 @@
-structures_folder: data/antibody 
-preprocessed_structures: data/antibody_test_structures 
-pdb_stems: 7LQV
-mutants: data/example_mutations.csv
-mutants_templates: data/example_mations_templates.fasta 
-workdir: analysis_of_antibodies_runs
-conformers_to_evaluate: 0 

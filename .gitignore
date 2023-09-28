@@ -5,3 +5,7 @@ obsolete
 .snakemake/*
 .snakemake
 data/blast/*
+analysis_of_ace2_runs.sh
+analysis_of_antibodies_runs.sh
+configs/ace2_runs.yaml
+configs/antibody_runs.yaml
