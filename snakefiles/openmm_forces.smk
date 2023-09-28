@@ -79,25 +79,14 @@ rule run_OpenMM_eval_subtract:
         """
 rule optimize_complex:
     input:
-        "{pdbid}_{mutation}_{partner1}_{partner2}{maybe_wt}.pdb"
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models_after_faspr/{pdb}={chain}={mutations}.pdb",
+        container = "containers/openmm.sif"
     output:
-        pdb = "optimized/{pdbid}_{mutation}_{partner1}_{partner2}{maybe_wt}.pdb",
-        map = "optimized/{pdbid}_{mutation}_{partner1}_{partner2}{maybe_wt}.map"
+        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models_after_openmm/{pdb}={chain}={mutations}.pdb",
     singularity:
         "containers/openmm.sif"
     shell:
         """
-        mkdir --parents $(dirname {output})
-        if [ -s {input} ]
-        then
-            grep ^ATOM {input} \
-                | covid-lt-new/bin/pdb_select --first-model --chain {wildcards.partner1}{wildcards.partner2} \
-                | PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_renumber --output-map {output.map} \
-                | PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_resolve_alternate_locations \
-                | covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --add-missing-hydrogens --constrain heavy --max-iterations 100 \
-                | PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_rename_chains --source <(grep ^ATOM {input} | covid-lt-new/bin/pdb_select --first-model --chain {wildcards.partner1}{wildcards.partner2}) > {output.pdb}
-        else
-            echo -n > {output.map}
-            echo -n > {output.pdb}
-        fi
+        covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --add-missing-hydrogens --constrain heavy --max-iterations 100 {input.structure} \
+            | PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_rename_chains --source {input.structure} > {output}
         """
