@@ -490,13 +490,23 @@ rule mutants_targets_templates:
         #promod_models_evoef1_evals = aggregate_TEMPLATE_promod_models_evoef1,
         #promod_models_evoef1_evals_with_conformers = aggregate_TEMPLATE_promod_models_evoef1_with_conformers
 
-rule get_summary_of_binding:
+rule collect_ddG_binding:
     input:
         promod_models_prodigy_evals = aggregate_TEMPLATE_promod_models_prodigy_with_conformers,
-        promod_models_evoef1_evals = aggregate_TEMPLATE_promod_models_evoef1_with_conformers
+        promod_models_evoef1_evals = aggregate_TEMPLATE_promod_models_evoef1_with_conformers,
+        ddg = work_dir + "/rezults/mutation_ddg_predictions.csv"
     output:
         ddg_results_on_promod_full = mutrez + "/promod_models_results_full.csv",
         ddg_results_on_promod_main = mutrez + "/promod_models_results_main.csv",
     notebook:
         "notebooks/collect_results_4promod.r.ipynb"
+
+rule get_summary_of_binding:
+    input:
+        mutdef = mutrez + "/mutations_data_4models.csv",
+        ddg_results_on_promod_main = mutrez + "/promod_models_results_main.csv",
+    output:
+        rez = mutrez + "/sequence_variants_per_ddG.csv",
+    notebook:
+        "notebooks/match_ddg_with_rezults.r.ipynb"
 
