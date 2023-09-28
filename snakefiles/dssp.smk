@@ -29,7 +29,7 @@ rule run_DSSP_complex_eval:
             | dssp --output-format dssp /dev/stdin > {output}
         """
 
-rule run_DSSP_part_sum:
+rule run_DSSP_sum:
     input:
         work_dir + "/mutants_structure_scoring/DSSP/scores/{type}/{pdb,[^=]+}={chain,[^=]+}.sc"
     output:
