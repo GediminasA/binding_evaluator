@@ -85,7 +85,7 @@ rule predict_ddG:
         "containers/r-cran.sif"
     shell:
         """
-        covid-lt-new/bin/random-forest {input.table} --input-format csv --input-model covid-lt-new/binding-evaluator-model.RData > {output}
+        covid-lt-new/bin/random-forest {input.table} --input-format csv --input-model covid-lt-new/binding-evaluator-model-our.RData > {output}
         """
 
 rule extract_results_ddg:
