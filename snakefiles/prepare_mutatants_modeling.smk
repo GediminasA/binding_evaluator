@@ -287,7 +287,7 @@ rule model_mutants_faspr_denovo:
                 | tr + ' ' \
                 | xargs -n 1 echo \
                 | awk '{{ print substr($0, 0, 1) "{wildcards.chain}" substr($0, 2) }}' \
-                | xargs -i echo --replace {})
+                | xargs -i echo --replace {{}})
         fi
 
         TMPFILE=$(mktemp --suffix .pdb)
