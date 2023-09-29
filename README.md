@@ -40,7 +40,7 @@
     git lfs checkout
 ```
 
-Make sure that uidmap is install ed in the system, this coud ne done like:
+Make sure that uidmap is installed in the system, this coud ne done like:
  ```bash
  sudo apt-get install uidmap
  ```
