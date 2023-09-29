@@ -1,6 +1,6 @@
 rule run_EvoEF1_eval:
     input:
-        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models_after_openmm/{pdb}={chain}={mutations}.pdb",
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations}.pdb",
         groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
         container = "containers/evoef1.sif"
     output:
