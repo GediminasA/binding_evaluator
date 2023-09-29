@@ -310,10 +310,10 @@ rule model_mutants_faspr_denovo:
 # This rule is needed to add hydrogens to FASPR-optimized structures as FASPR does not do that itself
 rule model_mutants_promod_after_faspr:
     input:
-        structure = work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations}.pdb",
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations}_before_promod.pdb",
         container = "containers/promod.sif"
     output:
-        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models_after_faspr/{pdb}={chain}={mutations}.pdb"
+        work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations}.pdb"
     container:
         "containers/promod.sif"
     shell:
