@@ -77,6 +77,7 @@ rule run_OpenMM_eval_subtract:
         """
         paste {input.mut} {input.wt} | awk '{{ print $1 "\t" $2 - $3 - $4 + $5 + $6 + $7 }}' > {output}
         """
+
 rule optimize_complex:
     input:
         structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models_after_faspr/{pdb}={chain}={mutations}.pdb",
