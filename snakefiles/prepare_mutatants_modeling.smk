@@ -267,16 +267,45 @@ rule model_mutants_promod_faspr:
     shell:
         "FASPR -i {input.structure} -o {output} 2>&1 | cat >> {log}"
 
-rule model_mutants_faspr:
+rule model_mutants_faspr_denovo:
     input:
-        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.pdb",
+        structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
+        groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
         container = "containers/faspr.sif"
     output:
-        work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations}.pdb"
+        work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations,[^_]+}_before_promod.pdb"
     container:
         "containers/faspr.sif"
     shell:
-        "FASPR -i {input.structure} -o {output}"
+        """
+        rm -f {output}
+
+        MUTATIONS=
+        if [ "{wildcards.mutations}" != nan ]
+        then
+            MUTATIONS=$(echo {wildcards.mutations} \
+                | tr + ' ' \
+                | xargs -n 1 echo \
+                | awk '{{ print substr($0, 0, 1) "{wildcards.chain}" substr($0, 2) }}' \
+                | xargs -i echo --replace {})
+        fi
+
+        TMPFILE=$(mktemp --suffix .pdb)
+        covid-lt-new/bin/pdb_select --first-model --chain $(cat {input.groups} | cut -f 1,2 | sed 's/[\t,]//g') {input.structure} \
+            | PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_resolve_alternate_locations > $TMPFILE
+        PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_atom2fasta --with-initial-gaps $TMPFILE \
+            | covid-lt-new/bin/fasta2pdb_seqres \
+            | covid-lt-new/bin/pdb_mutate_seqres $MUTATIONS --trim-gaps \
+            | covid-lt-new/bin/pdb_seqres2fasta \
+            | grep -v '^>' \
+            | grep -o . \
+            | grep -v X \
+            | xargs echo \
+            | sed 's/ //g' \
+            | FASPR -i $TMPFILE -s /dev/stdin -o {output} || true
+        test -e {output} || echo -n > {output}
+        rm $TMPFILE
+        """
 
 # This rule is needed to add hydrogens to FASPR-optimized structures as FASPR does not do that itself
 rule model_mutants_promod_after_faspr:
