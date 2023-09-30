@@ -3,4 +3,4 @@ From: debian:bookworm
 
 %post
     apt-get update
-    apt-get install --yes libopenmm-plugins python3-biopython python3-simtk
+    apt-get install --yes python3-biopython python3-simtk
