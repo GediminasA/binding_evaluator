@@ -80,6 +80,7 @@ rule collect_binding_terms:
 rule predict_ddG:
     input:
         table = work_dir + "/rezults/mutation_terms_4ddg.csv",
+        model = "covid-lt-new/binding-evaluator-model-our.RData",
         container = "containers/r-cran.sif"
     output:
         work_dir + "/rezults/mutation_terms_predicted.csv"
@@ -87,7 +88,7 @@ rule predict_ddG:
         "containers/r-cran.sif"
     shell:
         """
-        covid-lt-new/bin/random-forest {input.table} --input-format csv --input-model covid-lt-new/binding-evaluator-model-our.RData > {output}
+        covid-lt-new/bin/random-forest {input.table} --input-format csv --input-model {input.model} > {output}
         """
 
 rule extract_results_ddg:
