@@ -88,6 +88,8 @@ rule optimize_complex:
         "containers/openmm.sif"
     shell:
         """
-        covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --add-missing-hydrogens --constrain heavy --max-iterations 100 {input.structure} \
+        PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_renumber {input.structure} \
+            | PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_resolve_alternate_locations \
+            | covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --add-missing-hydrogens --constrain heavy --max-iterations 100 \
             | PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_rename_chains --source {input.structure} > {output}
         """
