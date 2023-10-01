@@ -259,9 +259,9 @@ rule model_mutants_promod_faspr:
         structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_faspr.pdb",
         container = "containers/faspr.sif"
     output:
-        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_promod_simulation.pdb"
+        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}.pdb"
     log:
-        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_promod_simulation.log"
+        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}.log"
     container:
         "containers/faspr.sif"
     shell:
@@ -273,7 +273,7 @@ rule model_mutants_faspr:
         groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
         container = "containers/faspr.sif"
     output:
-        work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations,[^_]+}_before_promod_simulation.pdb"
+        work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations,[^_]+}.pdb"
     container:
         "containers/faspr.sif"
     shell:
@@ -307,18 +307,6 @@ rule model_mutants_faspr:
         rm $TMPFILE
         """
 
-# This rule is needed to add hydrogens to FASPR-optimized structures as FASPR does not do that itself
-rule model_mutants_promod_simulate:
-    input:
-        structure = "{prefix}/{pdb}={chain}={mutations,[^_]+}_before_promod_simulation.pdb",
-        container = "containers/promod.sif"
-    output:
-        work_dir + "{prefix}/{pdb}={chain}={mutations,[^_]+}.pdb"
-    container:
-        "containers/promod.sif"
-    shell:
-        "PYTHONPATH=covid-lt-new covid-lt-new/bin/promod-fix-pdb --do-not-fill-gaps --simulate {input.structure} > {output}"
-
 # Insertions and deletions are build by ProMod, other mutants and wild type structures are built by FASPR
 def select_model_method(wildcards):
     if wildcards.mutations.count("-") or wildcards.mutations.count("ins"):
@@ -330,9 +318,20 @@ rule model_mutants_all:
     input:
         select_model_method
     output:
-        work_dir + "/mutants_structure_generation/TEMPLATES/all_models/{pdb}={chain}={mutations}.pdb"
+        work_dir + "/mutants_structure_generation/TEMPLATES/all_models/{pdb}={chain}={mutations,[^_]+}_raw.pdb"
     shell:
         "cp {input} {output}"
+
+# This rule is needed to add hydrogens to structures as mutant builders do not do that themselves
+rule model_mutants_all_simulated:
+    input:
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/all_models/{pdb}={chain}={mutations,[^_]+}_raw.pdb"
+    output:
+        work_dir + "/mutants_structure_generation/TEMPLATES/all_models/{pdb}={chain}={mutations,[^_]+}.pdb"
+    container:
+        "containers/promod.sif"
+    shell:
+        "PYTHONPATH=covid-lt-new covid-lt-new/bin/promod-fix-pdb --do-not-fill-gaps --simulate {input.structure} > {output}"
 
 rule copy_for_evaluation_static:
     input:
