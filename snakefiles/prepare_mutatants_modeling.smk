@@ -303,8 +303,8 @@ rule model_mutants_faspr:
             | xargs echo \
             | sed 's/ //g' \
             | FASPR -i $TMPFILE -s /dev/stdin -o {output} || true
-        test -e {output} || echo -n > {output}
         rm $TMPFILE
+        test -e {output}
         """
 
 # Insertions and deletions are build by ProMod, other mutants and wild type structures are built by FASPR
