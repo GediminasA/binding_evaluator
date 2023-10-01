@@ -296,7 +296,7 @@ rule mutated_sequences:
             | PYTHONPATH=covid-lt-new covid-lt-new/bin/promod-fix-pdb --output-alignment-only \
             | tail -n 2 \
             | covid-lt-new/bin/fasta_mutate $MUTATIONS \
-            | tail -n 1 >> {output}
+            | tail -n +2 >> {output} || true
         """
 
 rule model_mutants_faspr:
