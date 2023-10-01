@@ -267,6 +267,36 @@ rule model_mutants_promod_faspr:
     shell:
         "FASPR -i {input.structure} -o {output} 2>&1 | cat >> {log}"
 
+rule mutated_sequences:
+    input:
+        structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
+        template = config["mutants_templates"],
+        container = "containers/promod.sif"
+    output:
+        work_dir + "/mutants_structure_generation/TEMPLATES/mutated_sequences/{pdb}={chain}={mutations,[^_]+}.fasta"
+    container:
+        "containers/promod.sif"
+    shell:
+        """
+        MUTATIONS=
+        if [ "{wildcards.mutations}" != nan ]
+        then
+            MUTATIONS=$(echo {wildcards.mutations} \
+                | tr + ' ' \
+                | xargs -n 1 echo \
+                | awk '{{ print substr($0, 0, 1) "{wildcards.chain}" substr($0, 2) }}' \
+                | xargs -i echo --mutate {{}})
+        fi
+
+        (
+            covid-lt-new/bin/fasta2pdb_seqres {input.template}
+            grep ^ATOM {input.structure}
+        ) \
+            | PYTHONPATH=covid-lt-new covid-lt-new/bin/promod-fix-pdb --output-alignment-only \
+            | tail -n 2 \
+            | covid-lt-new/bin/fasta_mutate $MUTATIONS > {output}
+        """
+
 rule model_mutants_faspr:
     input:
         structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
