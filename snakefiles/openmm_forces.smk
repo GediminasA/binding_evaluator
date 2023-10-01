@@ -46,7 +46,7 @@ rule evaluate_openmm_ff2:
 
 rule run_OpenMM_eval:
     input:
-        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models_after_faspr/{pdb}={chain}={mutations}.pdb",
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/optimized_models/{pdb}={chain}={mutations}.pdb",
         groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
         container = "containers/openmm.sif"
     output:
@@ -75,5 +75,21 @@ rule run_OpenMM_eval_subtract:
         work_dir + "/mutants_structure_scoring/OpenMM/scores/{pdb}={chain}={mutations}.diff"
     shell:
         """
-        paste {input.mut} {input.wt} | awk '{{ print $1 "\t" $2 - $3 - $4 + $5 + $6 + $7 }}' > {output}
+        paste {input.mut} {input.wt} | awk '{{ print $1 "\t" $2 - $3 - $4 - $6 + $7 + $8 }}' > {output}
+        """
+
+rule optimize_complex:
+    input:
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations}.pdb",
+        container = "containers/openmm.sif"
+    output:
+        work_dir + "/mutants_structure_generation/TEMPLATES/optimized_models/{pdb}={chain}={mutations}.pdb",
+    singularity:
+        "containers/openmm.sif"
+    shell:
+        """
+        PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_renumber {input.structure} \
+            | PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_resolve_alternate_locations \
+            | covid-lt-new/bin/pdb_openmm_minimize --forcefield charmm36.xml --add-missing-hydrogens --constrain heavy --max-iterations 100 \
+            | PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_rename_chains --source {input.structure} > {output}
         """
