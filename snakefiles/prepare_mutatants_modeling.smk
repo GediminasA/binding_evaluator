@@ -259,9 +259,9 @@ rule model_mutants_promod_faspr:
         structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_faspr.pdb",
         container = "containers/faspr.sif"
     output:
-        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_promod.pdb"
+        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_promod_simulation.pdb"
     log:
-        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_promod.log"
+        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_promod_simulation.log"
     container:
         "containers/faspr.sif"
     shell:
@@ -273,7 +273,7 @@ rule model_mutants_faspr:
         groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
         container = "containers/faspr.sif"
     output:
-        work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations,[^_]+}_before_promod.pdb"
+        work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations,[^_]+}_before_promod_simulation.pdb"
     container:
         "containers/faspr.sif"
     shell:
@@ -310,7 +310,7 @@ rule model_mutants_faspr:
 # This rule is needed to add hydrogens to FASPR-optimized structures as FASPR does not do that itself
 rule model_mutants_promod_simulate:
     input:
-        structure = "{prefix}/{pdb}={chain}={mutations,[^_]+}_before_promod.pdb",
+        structure = "{prefix}/{pdb}={chain}={mutations,[^_]+}_before_promod_simulation.pdb",
         container = "containers/promod.sif"
     output:
         work_dir + "{prefix}/{pdb}={chain}={mutations,[^_]+}.pdb"
