@@ -244,7 +244,7 @@ rule model_mutants_promod:
     output:
         model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_faspr.pdb"
     log:
-        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.log"
+        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_faspr.log"
     container:
         "containers/promod.sif"
     threads: 8
@@ -259,9 +259,9 @@ rule model_mutants_promod_faspr:
         structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_faspr.pdb",
         container = "containers/faspr.sif"
     output:
-        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}.pdb"
+        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_promod.pdb"
     log:
-        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.log"
+        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_promod.log"
     container:
         "containers/faspr.sif"
     shell:
@@ -308,12 +308,12 @@ rule model_mutants_faspr:
         """
 
 # This rule is needed to add hydrogens to FASPR-optimized structures as FASPR does not do that itself
-rule model_mutants_promod_after_faspr:
+rule model_mutants_promod_simulate:
     input:
-        structure = work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations,[^_]+}_before_promod.pdb",
+        structure = "{prefix}/{pdb}={chain}={mutations,[^_]+}_before_promod.pdb",
         container = "containers/promod.sif"
     output:
-        work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations,[^_]+}.pdb"
+        work_dir + "{prefix}/{pdb}={chain}={mutations,[^_]+}.pdb"
     container:
         "containers/promod.sif"
     shell:
