@@ -300,7 +300,7 @@ rule mutated_sequences:
             | covid-lt-new/bin/fasta_mutate $MUTATIONS \
             | tail -n +2 >> {output}
 
-        covid-lt-new/bin/pdb_select --first-model --chain $(cut -f 2 {input.groups} | tr -d ,) \
+        covid-lt-new/bin/pdb_select --first-model --chain $(cut -f 2 {input.groups} | tr -d ,) {input.structure} \
             | covid-lt-new/bin/pdb_atom2fasta >> {output}
         """
 
