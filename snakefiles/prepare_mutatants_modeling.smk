@@ -290,7 +290,10 @@ rule mutated_sequences:
         fi
 
         (
-            covid-lt-new/bin/fasta2pdb_seqres {input.template}
+            (
+                echo '>{wildcards.pdb}:{wildcards.chain}'
+                tail -n +2 {input.template}
+            ) | covid-lt-new/bin/fasta2pdb_seqres
             grep ^ATOM {input.structure} \
                 | covid-lt-new/bin/pdb_select --first-model --chain {wildcards.chain}
         ) \
