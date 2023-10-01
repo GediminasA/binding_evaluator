@@ -62,25 +62,22 @@ rule collect_binding_terms:
                 | grep -v '=nan$' \
                 | while read LABEL
                   do
-                    (
-                        echo $LABEL
-                        awk '{{print $5 " " $7 - $6}}' < {work_dir}/mutants_structure_scoring/CADscore/scores/$LABEL.sc
-                        cat {work_dir}/mutants_structure_scoring/DSSP/scores/complex/$LABEL.sum
-                        cat {work_dir}/mutants_structure_scoring/DSSP/scores/part/$LABEL.sum
-                        cat {work_dir}/mutants_structure_scoring/EvoEF1/scores/$LABEL.diff
-                        cut -f 2 {work_dir}/mutants_structure_scoring/OpenMM/scores/$LABEL.diff
-                        tail -n 1 {work_dir}/mutants_structure_scoring/PROVEAN/scores/$LABEL.sc | cut -f 2
-                    ) \
-                        | xargs echo \
-                        | sed 's/ /,/g'
-                  done
+                    echo $LABEL
+                    awk '{{print $5 " " $7 - $6}}' < {work_dir}/mutants_structure_scoring/CADscore/scores/$LABEL.sc
+                    cat {work_dir}/mutants_structure_scoring/DSSP/scores/complex/$LABEL.sum
+                    cat {work_dir}/mutants_structure_scoring/DSSP/scores/part/$LABEL.sum
+                    cat {work_dir}/mutants_structure_scoring/EvoEF1/scores/$LABEL.diff
+                    cut -f 2 {work_dir}/mutants_structure_scoring/OpenMM/scores/$LABEL.diff
+                    tail -n 1 {work_dir}/mutants_structure_scoring/PROVEAN/scores/$LABEL.sc | cut -f 2
+                  done \
+                | xargs echo \
+                | sed 's/ /,/g'
         ) > {output}
         """
 
 rule predict_ddG:
     input:
         table = work_dir + "/rezults/mutation_terms_4ddg.csv",
-        model = "covid-lt-new/binding-evaluator-model-our.RData",
         container = "containers/r-cran.sif"
     output:
         work_dir + "/rezults/mutation_terms_predicted.csv"
@@ -88,7 +85,7 @@ rule predict_ddG:
         "containers/r-cran.sif"
     shell:
         """
-        covid-lt-new/bin/random-forest {input.table} --input-format csv --input-model {input.model} > {output}
+        covid-lt-new/bin/random-forest {input.table} --input-format csv --input-model covid-lt-new/binding-evaluator-model-our.RData > {output}
         """
 
 rule extract_results_ddg:

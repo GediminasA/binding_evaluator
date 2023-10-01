@@ -1,6 +1,6 @@
 rule run_DSSP_part_eval:
     input:
-        structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models_after_faspr/{pdb,[^=]+}={chain,[^=]+}=nan.pdb",
         container = "containers/dssp.sif"
     output:
         work_dir + "/mutants_structure_scoring/DSSP/scores/part/{pdb,[^=]+}={chain,[^=]+}.sc"
@@ -8,14 +8,14 @@ rule run_DSSP_part_eval:
         "containers/dssp.sif"
     shell:
         """
-        covid-lt/bin/pdb_select --chain {wildcards.chain} {input.structure} \
-            | grep -e ^HEADER -e ^ATOM \
+        covid-lt/bin/pdb_add_header --id {wildcards.pdb} {input.structure} \
+            | covid-lt/bin/pdb_select --chain {wildcards.chain} \
             | dssp --output-format dssp /dev/stdin > {output}
         """
 
 rule run_DSSP_complex_eval:
     input:
-        structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models_after_faspr/{pdb,[^=]+}={chain,[^=]+}=nan.pdb",
         container = "containers/dssp.sif"
     output:
         work_dir + "/mutants_structure_scoring/DSSP/scores/complex/{pdb,[^=]+}={chain,[^=]+}.sc"
@@ -23,7 +23,7 @@ rule run_DSSP_complex_eval:
         "containers/dssp.sif"
     shell:
         """
-        grep -e ^HEADER -e ^ATOM {input.structure} \
+        covid-lt/bin/pdb_add_header --id {wildcards.pdb} {input.structure} \
             | dssp --output-format dssp /dev/stdin > {output}
         """
 
