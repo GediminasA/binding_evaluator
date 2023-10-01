@@ -240,7 +240,7 @@ rule model_mutants_promod:
     input:
         "containers/promod.sif",
         structure = work_dir+"/processed/{pdb}.pdb",
-        sequence = work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{pdb}={chain}={mutations}.fasta" 
+        sequence = work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{pdb}={chain}={mutations,[^_]+}.fasta"
     output:
         model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_faspr.pdb"
     log:
