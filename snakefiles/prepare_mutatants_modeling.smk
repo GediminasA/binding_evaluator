@@ -292,7 +292,8 @@ rule mutated_sequences:
         echo '>{wildcards.pdb}:{wildcards.chain}' > {output}
         (
             covid-lt-new/bin/fasta2pdb_seqres {input.template}
-            grep ^ATOM {input.structure}
+            grep ^ATOM {input.structure} \
+                | covid-lt-new/bin/pdb_select --first-model --chain {wildcards.chain}
         ) \
             | PYTHONPATH=covid-lt-new covid-lt-new/bin/promod-fix-pdb --output-alignment-only \
             | tail -n 2 \
