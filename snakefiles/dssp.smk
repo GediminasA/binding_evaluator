@@ -8,8 +8,9 @@ rule run_DSSP_part_eval:
         "containers/dssp.sif"
     shell:
         """
-        covid-lt/bin/pdb_select --chain {wildcards.chain} {input.structure} \
-            | grep -e ^HEADER -e ^ATOM \
+        grep ^ATOM {input.structure} \
+            | covid-lt-new/bin/pdb_add_header --id {wildcards.pdb} \
+            | covid-lt/bin/pdb_select --chain {wildcards.chain} \
             | dssp --output-format dssp /dev/stdin > {output}
         """
 
@@ -23,7 +24,8 @@ rule run_DSSP_complex_eval:
         "containers/dssp.sif"
     shell:
         """
-        grep -e ^HEADER -e ^ATOM {input.structure} \
+        grep ^ATOM {input.structure} \
+            | covid-lt-new/bin/pdb_add_header --id {wildcards.pdb} \
             | dssp --output-format dssp /dev/stdin > {output}
         """
 
