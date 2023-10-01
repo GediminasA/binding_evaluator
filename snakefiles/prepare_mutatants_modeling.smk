@@ -302,6 +302,7 @@ rule mutated_sequences:
 rule model_mutants_faspr:
     input:
         structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
+        sequence = work_dir + "/mutants_structure_generation/TEMPLATES/mutated_sequences/{pdb}={chain}={mutations,[^_]+}.fasta",
         groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
         container = "containers/faspr.sif"
     output:
@@ -312,26 +313,12 @@ rule model_mutants_faspr:
         """
         rm -f {output}
 
-        MUTATIONS=
-        if [ "{wildcards.mutations}" != nan ]
-        then
-            MUTATIONS=$(echo {wildcards.mutations} \
-                | tr + ' ' \
-                | xargs -n 1 echo \
-                | awk '{{ print substr($0, 0, 1) "{wildcards.chain}" substr($0, 2) }}' \
-                | xargs -i echo --replace {{}})
-        fi
-
         TMPFILE=$(mktemp --suffix .pdb)
         covid-lt-new/bin/pdb_select --first-model --chain $(cat {input.groups} | cut -f 1,2 | sed 's/[\t,]//g') {input.structure} \
             | PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_resolve_alternate_locations > $TMPFILE
-        PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_atom2fasta --with-initial-gaps $TMPFILE \
-            | covid-lt-new/bin/fasta2pdb_seqres \
-            | covid-lt-new/bin/pdb_mutate_seqres $MUTATIONS --trim-gaps \
-            | covid-lt-new/bin/pdb_seqres2fasta \
-            | grep -v '^>' \
+        grep -v '^>' {input.sequence} \
+            | tr -d - \
             | grep -o . \
-            | grep -v X \
             | xargs echo \
             | sed 's/ //g' \
             | FASPR -i $TMPFILE -s /dev/stdin -o {output} || true
