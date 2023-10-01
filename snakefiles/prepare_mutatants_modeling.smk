@@ -221,17 +221,17 @@ def aggregate_TEMPLATE_seqs(wildcards):
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{stem}.fasta",stem=stems))
 
-def aggregate_TEMPLATE_promod_models(wildcards):
+def aggregate_TEMPLATE_all_models(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
-    return(expand(work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{stem}.pdb",stem=stems))
+    return(expand(work_dir + "/mutants_structure_generation/TEMPLATES/all_models/{stem}.pdb",stem=stems))
 
-def aggregate_TEMPLATE_promod_models_ready_4_eval(wildcards):
+def aggregate_TEMPLATE_all_models_ready_4_eval(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(work_dir + "/evaluation/starting_structures/{stem}_1.pdb",stem=stems))
 
-def aggregate_TEMPLATE_promod_models_ready_4_eval_with_conformers(wildcards):
+def aggregate_TEMPLATE_all_models_ready_4_eval_with_conformers(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(work_dir + "/evaluation/starting_structures/{stem}_{id}.pdb",stem=stems, id = range(1, nconf+2)))
@@ -490,14 +490,14 @@ rule DeepRefine:
 #### aggregates for evaluation collection and testing
 
 
-def aggregate_TEMPLATE_promod_models_prodigy(wildcards):
+def aggregate_TEMPLATE_all_models_prodigy(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(
         work_dir + "/evaluation/scores/{stem}_{id}_prodigy.tsv",
         stem=stems, id=[1]))
 
-def aggregate_TEMPLATE_promod_models_prodigy_with_conformers(wildcards):
+def aggregate_TEMPLATE_all_models_prodigy_with_conformers(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(
@@ -505,7 +505,7 @@ def aggregate_TEMPLATE_promod_models_prodigy_with_conformers(wildcards):
         work_dir + "/evaluation/scores/{stem}_{id}_prodigy.tsv",
         stem=stems, id=range(1, nconf+2)))
 
-def aggregate_TEMPLATE_promod_models_evoef1(wildcards):
+def aggregate_TEMPLATE_all_models_evoef1(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(
@@ -513,7 +513,7 @@ def aggregate_TEMPLATE_promod_models_evoef1(wildcards):
         work_dir + "/evaluation/scores/{stem}_1_evoef1.tsv",
         stem=stems))
 
-def aggregate_TEMPLATE_promod_models_evoef1_with_conformers(wildcards):
+def aggregate_TEMPLATE_all_models_evoef1_with_conformers(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(
@@ -524,20 +524,20 @@ def aggregate_TEMPLATE_promod_models_evoef1_with_conformers(wildcards):
 
 rule mutants_targets_templates:
     input:
-        target = aggregate_TEMPLATE_promod_models_prodigy,
+        target = aggregate_TEMPLATE_all_models_prodigy,
         # modelling_templates = aggregate_TEMPLATE_seqs,
-        #promod_models = aggregate_TEMPLATE_promod_models,
-        #promod_models_copied_4_eval = aggregate_TEMPLATE_promod_models_ready_4_eval,
-        #promod_models_copied_4_eval_with_conformers = aggregate_TEMPLATE_promod_models_ready_4_eval_with_conformers,
-        #promod_models_prodigy_evals = aggregate_TEMPLATE_promod_models_prodigy,
-        #promod_models_prodigy_evals_with_conformers = aggregate_TEMPLATE_promod_models_prodigy_with_conformers,
-        #promod_models_evoef1_evals = aggregate_TEMPLATE_promod_models_evoef1,
-        #promod_models_evoef1_evals_with_conformers = aggregate_TEMPLATE_promod_models_evoef1_with_conformers
+        #promod_models = aggregate_TEMPLATE_all_models,
+        #promod_models_copied_4_eval = aggregate_TEMPLATE_all_models_ready_4_eval,
+        #promod_models_copied_4_eval_with_conformers = aggregate_TEMPLATE_all_models_ready_4_eval_with_conformers,
+        #promod_models_prodigy_evals = aggregate_TEMPLATE_all_models_prodigy,
+        #promod_models_prodigy_evals_with_conformers = aggregate_TEMPLATE_all_models_prodigy_with_conformers,
+        #promod_models_evoef1_evals = aggregate_TEMPLATE_all_models_evoef1,
+        #promod_models_evoef1_evals_with_conformers = aggregate_TEMPLATE_all_models_evoef1_with_conformers
 
 rule collect_ddG_binding:
     input:
-        promod_models_prodigy_evals = aggregate_TEMPLATE_promod_models_prodigy_with_conformers,
-        promod_models_evoef1_evals = aggregate_TEMPLATE_promod_models_evoef1_with_conformers,
+        promod_models_prodigy_evals = aggregate_TEMPLATE_all_models_prodigy_with_conformers,
+        promod_models_evoef1_evals = aggregate_TEMPLATE_all_models_evoef1_with_conformers,
         ddg = work_dir + "/rezults/mutation_ddg_predictions.csv"
     output:
         ddg_results_on_promod_full = mutrez + "/promod_models_results_full.csv",
