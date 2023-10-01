@@ -288,13 +288,15 @@ rule mutated_sequences:
                 | xargs -i echo --mutate {{}})
         fi
 
+        echo '>{wildcards.pdb}:{wildcards.chain}' > {output}
         (
             covid-lt-new/bin/fasta2pdb_seqres {input.template}
             grep ^ATOM {input.structure}
         ) \
             | PYTHONPATH=covid-lt-new covid-lt-new/bin/promod-fix-pdb --output-alignment-only \
             | tail -n 2 \
-            | covid-lt-new/bin/fasta_mutate $MUTATIONS > {output}
+            | covid-lt-new/bin/fasta_mutate $MUTATIONS \
+            | tail -n 1 >> {output}
         """
 
 rule model_mutants_faspr:
