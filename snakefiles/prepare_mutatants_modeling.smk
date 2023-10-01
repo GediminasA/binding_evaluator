@@ -271,6 +271,7 @@ rule mutated_sequences:
     input:
         structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
         template = config["mutants_templates"],
+        groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
         container = "containers/promod.sif"
     output:
         work_dir + "/mutants_structure_generation/TEMPLATES/mutated_sequences/{pdb}={chain}={mutations,[^_]+}.fasta"
@@ -296,7 +297,10 @@ rule mutated_sequences:
             | PYTHONPATH=covid-lt-new covid-lt-new/bin/promod-fix-pdb --output-alignment-only \
             | tail -n 2 \
             | covid-lt-new/bin/fasta_mutate $MUTATIONS \
-            | tail -n +2 >> {output} || true
+            | tail -n +2 >> {output}
+
+        covid-lt-new/bin/pdb_select --first-model --chain $(cut -f 2 {input.groups} | tr -d ,) \
+            | covid-lt-new/bin/pdb_atom2fasta >> {output}
         """
 
 rule model_mutants_faspr:
