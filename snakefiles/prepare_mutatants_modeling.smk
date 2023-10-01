@@ -297,8 +297,7 @@ rule mutated_sequences:
             | PYTHONPATH=covid-lt-new covid-lt-new/bin/promod-fix-pdb --output-alignment-only \
             | tail -n 1 \
             | cat <(echo '>{wildcards.pdb}:{wildcards.chain}') - \
-            | covid-lt-new/bin/fasta_mutate $MUTATIONS \
-            | tail -n +2 > {output}
+            | covid-lt-new/bin/fasta_mutate $MUTATIONS > {output}
 
         covid-lt-new/bin/pdb_select --first-model --chain $(cut -f 2 {input.groups} | tr -d ,) {input.structure} \
             | covid-lt-new/bin/pdb_atom2fasta >> {output}
