@@ -319,6 +319,21 @@ rule model_mutants_promod_after_faspr:
     shell:
         "PYTHONPATH=covid-lt-new covid-lt-new/bin/promod-fix-pdb --do-not-fill-gaps --simulate {input.structure} > {output}"
 
+# Insertions and deletions are build by ProMod, other mutants and wild type structures are built by FASPR
+def select_model_method(wildcards):
+    if wildcards.mutations.count("-") or wildcards.mutations.count("ins"):
+        return [work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/" + wildcards.pdb + "=" + wildcards.chain + "=" + wildcards.mutations + ".pdb"]
+    else:
+        return [work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/" + wildcards.pdb + "=" + wildcards.chain + "=" + wildcards.mutations + ".pdb"]
+
+rule model_mutants_all:
+    input:
+        select_model_method
+    output:
+        work_dir + "/mutants_structure_generation/TEMPLATES/all_models/{pdb}={chain}={mutations}.pdb"
+    shell:
+        "cp {input} {output}"
+
 rule copy_for_evaluation_static:
     input:
         #model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}_DeepRefine.pdb"
