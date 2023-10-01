@@ -1,5 +1,5 @@
 Bootstrap: docker
-From: debian:testing
+From: debian:bookworm
 
 %post
     apt-get update
