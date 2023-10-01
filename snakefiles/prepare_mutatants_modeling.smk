@@ -267,7 +267,7 @@ rule model_mutants_promod_faspr:
     shell:
         "FASPR -i {input.structure} -o {output} 2>&1 | cat >> {log}"
 
-rule model_mutants_faspr_denovo:
+rule model_mutants_faspr:
     input:
         structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
         groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
