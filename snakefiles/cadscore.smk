@@ -8,4 +8,4 @@ rule run_cadscore_eval:
     container:
         "containers/voronota.sif"
     shell:
-        "voronota-cadscore --input-target {input.wt} --input-model {input.mut} > {output}"
+        "voronota-cadscore --input-target {input.wt} --input-model {input.mut} > {output} ; sleep 1 "
