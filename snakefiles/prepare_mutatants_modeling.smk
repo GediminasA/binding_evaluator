@@ -323,6 +323,7 @@ rule model_mutants_faspr:
             | PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_resolve_alternate_locations > $TMPFILE
         grep -v '^>' {input.sequence} \
             | tr -d - \
+            | tr -d X \
             | grep -o . \
             | xargs echo \
             | sed 's/ //g' \
