@@ -80,7 +80,7 @@ rule run_OpenMM_eval_subtract:
 
 rule optimize_complex:
     input:
-        structure = work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations}.pdb",
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/all_models/{pdb}={chain}={mutations}.pdb",
         container = "containers/openmm.sif"
     output:
         work_dir + "/mutants_structure_generation/TEMPLATES/optimized_models/{pdb}={chain}={mutations}.pdb",
