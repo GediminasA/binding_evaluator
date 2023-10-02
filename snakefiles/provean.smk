@@ -16,9 +16,20 @@ rule provean_nr:
         )
         """
 
+rule run_PROVEAN_sequence:
+    input:
+        structure = work_dir + "/processed/{pdb}.pdb"
+    output:
+        work_dir + "/mutants_structure_scoring/PROVEAN/sequences/{pdb}={chain}=nan.fasta"
+    shell:
+        """
+        covid-lt-new/bin/pdb_select --chain {wildcards.chain} {input} \
+            | covid-lt-new/bin/pdb_atom2fasta > {output}
+        """
+
 rule run_PROVEAN_eval:
     input:
-        sequence = work_dir + "/processed_info/{pdb}_chain_{chain}.fasta",
+        sequence = work_dir + "/mutants_structure_scoring/PROVEAN/sequences/{pdb}={chain}=nan.fasta",
         container = "containers/provean.sif", # to prepare the container
         nr = "data/nr/2011-08/nr.pal" # to prepare the NR database
     output:
