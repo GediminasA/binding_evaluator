@@ -271,7 +271,7 @@ rule model_mutants_promod_faspr:
 rule mutated_sequences:
     input:
         structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
-        sequence = work_dir + "/processed_info/{pdb}_chain_{chain}.fasta",
+        template = config["mutants_templates"],
         groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
         container = "containers/promod.sif"
     output:
@@ -290,7 +290,19 @@ rule mutated_sequences:
                 | xargs -i echo --mutate {{}})
         fi
 
-        covid-lt-new/bin/fasta_mutate $MUTATIONS {input.sequence} > {output}
+        (
+            (
+                echo '>{wildcards.pdb}:{wildcards.chain}'
+                tail -n +2 {input.template}
+            ) | covid-lt-new/bin/fasta2pdb_seqres
+            grep ^ATOM {input.structure} \
+                | covid-lt-new/bin/pdb_select --first-model --chain {wildcards.chain}
+        ) \
+            | PYTHONPATH=covid-lt-new covid-lt-new/bin/promod-fix-pdb --output-alignment-only \
+            | tail -n 1 \
+            | cat <(echo '>{wildcards.pdb}:{wildcards.chain}') - \
+            | covid-lt-new/bin/fasta_mutate $MUTATIONS > {output}
+
         covid-lt-new/bin/pdb_select --first-model --chain $(cut -f 2 {input.groups} | tr -d ,) {input.structure} \
             | covid-lt-new/bin/pdb_atom2fasta >> {output}
         """

@@ -271,7 +271,7 @@ rule extract_seqs_by_chain:
         template = config["mutants_templates"],
         container = "containers/muscle.sif"
     output:
-        work_dir + "/processed_info/{stem}_chain_{chain}.fasta"
+        work_dir+"/processed_info/{stem}_chain_{chain}.fasta"
     container:
         "containers/muscle.sif"
     shell:
