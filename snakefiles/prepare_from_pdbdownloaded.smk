@@ -281,7 +281,7 @@ rule extract_seqs_by_chain:
                 | covid-lt-new/bin/pdb_atom2fasta \
                 | covid-lt-new/bin/fasta_select --id {wildcards.stem}:{wildcards.chain}
             echo '>template'
-            tail -n +2 {inputs.template}
+            tail -n +2 {input.template}
         ) \
             | muscle \
             | covid-lt-new/bin/fasta_select --id {wildcards.stem}:{wildcards.chain} > {output}
