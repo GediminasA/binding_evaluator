@@ -277,7 +277,7 @@ rule extract_seqs_by_chain:
     shell:
         """
         (
-            covid-lt-new/bin/pdb_add_header --id {wildcards.stem} {input.structure} \
+            covid-lt-new/bin/pdb_add_header {wildcards.stem} {input.structure} \
                 | covid-lt-new/bin/pdb_atom2fasta \
                 | covid-lt-new/bin/fasta_select --id {wildcards.stem}:{wildcards.chain}
             echo '>template'
