@@ -16,6 +16,7 @@ rule provean_nr:
         )
         """
 
+# This rule is needed as containers/provean.sif does not have python3-biopython
 rule run_PROVEAN_sequence:
     input:
         structure = work_dir + "/processed/{pdb}.pdb"
