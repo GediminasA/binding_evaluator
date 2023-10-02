@@ -298,7 +298,7 @@ rule mutated_sequences:
 rule model_mutants_faspr:
     input:
         structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
-        sequence = sequence = work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{pdb}={chain}={mutations,[^_]+}.fasta",
+        sequence = work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{pdb}={chain}={mutations,[^_]+}.fasta",
         groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
         container = "containers/faspr.sif"
     output:
