@@ -265,21 +265,6 @@ rule extract_seqs:
     shell:
         "pdb_tofasta -multi {input} > {output} "
 
-rule extract_seqs_by_chain:
-    input:
-        structure = pdbproc_dir + "/pristine/{stem,[^_]+}.pdb",
-        container = "containers/promod.sif"
-    output:
-        work_dir+"/processed_info/{stem}_chain_{chain}.fasta"
-    container:
-        "containers/promod.sif"
-    shell:
-        """
-        covid-lt-new/bin/pdb_select --chain {wildcards.chain} {input.structure} \
-            | PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_atom2fasta --replace-unknown-with X --with-initial-gaps \
-            | tr - X > {output}
-        """
-
 rule search4antibodies:
     input:
         work_dir+"/processed_info/{stem}.fasta"
