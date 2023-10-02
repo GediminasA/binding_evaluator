@@ -267,6 +267,7 @@ rule model_mutants_promod_faspr:
     shell:
         "FASPR -i {input.structure} -o {output} 2>&1 | cat >> {log}"
 
+# An alternative which could work here: cat <(covid-lt-new/bin/pdb_atom2fasta <(covid-lt-new/bin/pdb_add_header --id 1A22 1A22.pdb) | covid-lt-new/bin/fasta_select --id 1A22:A) data/mutabind_ddG_examples/mutants_templates.fasta | muscle | covid-lt-new/bin/fasta_select --id 1A22:A | head -n 5 | covid-lt-new/bin/fasta_mutate --replace CA182A
 rule mutated_sequences:
     input:
         structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
