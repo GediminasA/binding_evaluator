@@ -270,7 +270,6 @@ rule model_mutants_promod_faspr:
 rule mutated_sequences:
     input:
         structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
-        template = config["mutants_templates"],
         groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
         container = "containers/promod.sif"
     output:
@@ -286,24 +285,15 @@ rule mutated_sequences:
                 | tr + ' ' \
                 | xargs -n 1 echo \
                 | awk '{{ print substr($0, 0, 1) "{wildcards.chain}" substr($0, 2) }}' \
-                | xargs -i echo --mutate {{}})
+                | xargs -i echo --replace {{}})
         fi
 
-        (
-            (
-                echo '>{wildcards.pdb}:{wildcards.chain}'
-                tail -n +2 {input.template}
-            ) | covid-lt-new/bin/fasta2pdb_seqres
-            grep ^ATOM {input.structure} \
-                | covid-lt-new/bin/pdb_select --first-model --chain {wildcards.chain}
-        ) \
+        covid-lt-new/bin/pdb_select --first-model --chain $(cat {input.groups} | cut -f 1,2 | sed 's/[\t,]//g') {input.structure} \
             | PYTHONPATH=covid-lt-new covid-lt-new/bin/promod-fix-pdb --output-alignment-only \
-            | tail -n 1 \
-            | cat <(echo '>{wildcards.pdb}:{wildcards.chain}') - \
+            | grep -A 1 --no-group-separator :structure \
+            | sed 's/:structure//' \
+            | sed 's/> />{wildcards.pdb}:/' \
             | covid-lt-new/bin/fasta_mutate $MUTATIONS > {output}
-
-        covid-lt-new/bin/pdb_select --first-model --chain $(cut -f 2 {input.groups} | tr -d ,) {input.structure} \
-            | covid-lt-new/bin/pdb_atom2fasta >> {output}
         """
 
 rule model_mutants_faspr:
