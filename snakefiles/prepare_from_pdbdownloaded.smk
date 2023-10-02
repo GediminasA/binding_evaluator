@@ -268,23 +268,16 @@ rule extract_seqs:
 rule extract_seqs_by_chain:
     input:
         structure = pdbproc_dir + "/pristine/{stem,[^_]+}.pdb",
-        template = config["mutants_templates"],
-        container = "containers/muscle.sif"
+        container = "containers/promod.sif"
     output:
         work_dir+"/processed_info/{stem}_chain_{chain}.fasta"
     container:
-        "containers/muscle.sif"
+        "containers/promod.sif"
     shell:
         """
-        (
-            covid-lt-new/bin/pdb_add_header {wildcards.stem} {input.structure} \
-                | covid-lt-new/bin/pdb_atom2fasta \
-                | covid-lt-new/bin/fasta_select --id {wildcards.stem}:{wildcards.chain}
-            echo '>template'
-            tail -n +2 {inputs.template}
-        ) \
-            | muscle \
-            | covid-lt-new/bin/fasta_select --id {wildcards.stem}:{wildcards.chain} > {output}
+        covid-lt-new/bin/pdb_select --chain {wildcards.chain} {input.structure} \
+            | PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_atom2fasta --replace-unknown-with X --with-initial-gaps \
+            | tr - X > {output}
         """
 
 rule search4antibodies:
