@@ -59,7 +59,7 @@ rule run_PROVEAN_eval:
 rule run_PROVEAN_sum:
     input:
         score = work_dir + "/mutants_structure_scoring/PROVEAN/scores/{pdb}={chain}={mutations}.sc",
-        container = containers/r-cran.sif
+        container = "containers/r-cran.sif"
     output:
         work_dir + "/mutants_structure_scoring/PROVEAN/scores/{pdb}={chain}={mutations}.sum"
     container:
@@ -67,6 +67,8 @@ rule run_PROVEAN_sum:
     shell:
         """
         grep -vP '^[\[#]' {input.score} \
+            | grep -v ^provean \
+            | grep -v '^$' \
             | cut -f 2 \
             | covid-lt-new/bin/sum > {output}
         """
