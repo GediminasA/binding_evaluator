@@ -26,8 +26,8 @@ pdbproc_dir = work_dir + "/pdb_proc"
 
 rule download_pdb:
     output:
-        pdbproc_dir+"/pristine/{stem}.pdb"
-        #config["structures_folder"]+"/{stem}.pdb"
+        pdbproc_dir+"/pristine/{stem}.pdb",
+        pdbproc_dir+"/pristine/{stem,[^_]+}_downloaded"
     log:
         pdbproc_dir+"/pristine/{stem}.log"
     params:
@@ -39,11 +39,26 @@ rule download_pdb:
         local = config["structures_folder"]+"/"+wildcards.stem+".pdb"
         if os.path.exists(local):
             logf.write(f"copying file {local} to {output}\n")
-            shell("cp {local} {output}")
+            shell("cp {local} {output[0]}")
         else:
             logf.write(f"downloading {params.stem} to {output}\n")
-            shell("pdb_fetch {params.stem} > {output}")
+            shell("pdb_fetch {params.stem} > {output[0]}")
         logf.close()
+        shell("touch {output[1]}")
+
+rule copy_alreadyprepared4fix:
+        input:
+            config["preprocessed_structures"]+"/{stem}.pdb"
+        output:
+            pdbproc_dir+"/pristine/{stem,[^_]+}.pdb",
+            pdbproc_dir+"/pristine/{stem,[^_]+}_copyfromprepare"
+        shell:
+            """
+                cp {input} {output[0]}
+                touch {output[1]}
+            """
+
+ruleorder:  copy_alreadyprepared4fix > download_pdb
 
 rule download_swiss_prot_db:
     params:
@@ -157,8 +172,9 @@ rule fix_with_promod:
     threads: 4
     shell:
         """
+        cat {input} | grep -e "^SEQRES" > {output}
         export OPENMM_CPU_THREADS={threads}
-        PYTHONPATH=covid-lt covid-lt/bin/promod-fix-pdb --trim {input[0]} 1> {output} 2> {log}
+        PYTHONPATH=covid-lt covid-lt/bin/promod-fix-pdb --trim {input[0]} 1>> {output} 2> {log}
         """ 
 
 
@@ -227,33 +243,15 @@ rule pdb_fix:
         rm {params.pdb}
         """
 
-rule copy_alreadyprepared4fix:
-        input:
-            config["preprocessed_structures"]+"/{stem}.pdb"
-        output:
-            work_dir+"/process_provided/{stem,[^_]+}.pdb"
-        shell:
-            "cp {input} {output}"
-
-rule copy_alreadyprepared:
-        input:
-            work_dir+"/process_provided/{stem}.pdb"
-            #work_dir+"/process_provided/{stem}_pdb2pqr.pdb"
-        output:
-            work_dir+"/processed/{stem,[^_]+}.pdb"
-        shell:
-            "cp {input} {output}"
-
 rule copy_prepared:
         input:
-            pdbproc_dir + "/process/{stem}_seqresMatched_woHOH_pdbfix_pdb2pqr_promod.pdb"
-            #pdbproc_dir + "/process/{stem}_seqresMatched_woHOH_pdbfix_promod.pdb"
+            pdbproc_dir + "/process/{stem}_seqresMatched_woHOH.pdb"
+            #pdbproc_dir + "/process/{stem}_seqresMatched_woHOH_pdbfix_pdb2pqr_promod.pdb" - tos works with all prodigy dataset
         output:
             work_dir+"/processed/{stem,[^_]+}.pdb"
         shell:
             "cp {input} {output}"
 
-ruleorder:  copy_alreadyprepared > copy_prepared
 
 #extract fasta files and run hhblitz to identify antibodies
 

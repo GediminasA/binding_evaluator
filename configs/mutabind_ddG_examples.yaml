@@ -1,4 +1,3 @@
-structures_folder: data/mutabind_ddG_examples/structures
 preprocessed_structures: data/mutabind_ddG_examples/preprocessed_structures
 pdb_stems: 1A22
 mutants: data/mutabind_ddG_examples/mutants.csv

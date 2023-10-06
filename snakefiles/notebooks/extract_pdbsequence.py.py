@@ -35,7 +35,7 @@ for k in protein_letters_3to1_extended:
     map1to3[protein_letters_3to1_extended[k]] = k.upper()
     map3to1[k.upper()] = protein_letters_3to1_extended[k]
 
-#kmain
+seqres_regenerate = False
 
 
 # In[ ]:
@@ -169,14 +169,20 @@ for chain in pdb:
     seqres_seq, seqreq_seq_3L = chain.sequence_seqres(return_3L=True)
     #print(seqres_seq, seqreq_seq_3L)
     atom_seq = chain.sequence_atom()
-    
+#     print(f"CHAIN {chain.name}")
+#     print(seqres_seq)
+#     print(atom_seq)
+    #if seqres non existing - add
+    if seqres_seq == None:
+        seqres_seq = atom_seq
+        seqreq_seq_3L = [map1to3[s] for s in seqres_seq]
+        seqres_regenerate = True
+        logf.write(f"SEQRES are not found. Regenerationg from atoms\n")
     #check how many to keep at the ends
     align = pairwise2.align.globalds(seqres_seq, atom_seq, matrix, -11, -1, penalize_end_gaps=(False, False),one_alignment_only=True)[0]
     sequence = MutableSeq(align[0])
     structure = MutableSeq(align[1])
-#     print(f"CHAIN {chain.name}")
-#     print(seqres_seq)
-#     print(atom_seq)
+
 #     print("---")
 #     print(sequence)
 #     print("---")
@@ -299,16 +305,15 @@ ATOMSPUT = False
 SEQRESPUT = False
 #SEQRES_updated
 for l in pdb.content:
+    if l[0:7].find("SEQRES ") > -1 or seqres_regenerate:
+        if not SEQRESPUT:
+            out += SEQRES_updated  
+            SEQRESPUT = True
     if l[0:5].find("ATOM") > -1 or l[0:5].find("HETA") > -1:
         if not ATOMSPUT:
             out += "\n".join(ATOM_lines)+"\n"
             ATOMSPUT = True
-    elif l[0:7].find("SEQRES ") > -1:
-        if not SEQRESPUT:
-            out += SEQRES_updated
-            SEQRESPUT = True
-    else:
-        out += l
+
 with open(snakemake.output.pdb,"w") as outF:
     outF.write(out)
 

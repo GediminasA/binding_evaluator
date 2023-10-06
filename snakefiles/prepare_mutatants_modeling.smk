@@ -269,7 +269,8 @@ rule model_mutants_promod_faspr:
 
 rule mutated_sequences:
     input:
-        structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
+        structure = work_dir+"/processed/{pdb}.pdb",
+        #structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
         groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
         container = "containers/promod.sif"
     output:
@@ -560,6 +561,10 @@ rule collect_ddG_binding:
         ddg_results_on_promod_main = mutrez + "/promod_models_results_main.csv",
     notebook:
         "notebooks/collect_results_4promod.r.ipynb"
+
+rule test4m:
+    input:
+        ddg = work_dir + "/rezults/mutation_ddg_predictions.csv"
 
 rule get_summary_of_binding:
     input:
