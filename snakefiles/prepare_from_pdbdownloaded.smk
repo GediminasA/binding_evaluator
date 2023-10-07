@@ -245,8 +245,8 @@ rule pdb_fix:
 
 rule copy_prepared:
         input:
-            pdbproc_dir + "/process/{stem}_seqresMatched_woHOH.pdb"
-            #pdbproc_dir + "/process/{stem}_seqresMatched_woHOH_pdbfix_pdb2pqr_promod.pdb" - tos works with all prodigy dataset
+            #pdbproc_dir + "/process/{stem}_seqresMatched_woHOH.pdb"
+            pdbproc_dir + "/process/{stem}_seqresMatched_woHOH_pdbfix_pdb2pqr_promod.pdb" #- this works with all prodigy dataset
         output:
             work_dir+"/processed/{stem,[^_]+}.pdb"
         shell:
