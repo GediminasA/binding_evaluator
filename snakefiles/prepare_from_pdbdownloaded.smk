@@ -1,4 +1,4 @@
-import os
+import os, glob
 ### CONTAINER BUILDING RULES ###
 
 rule build_promod:
@@ -26,8 +26,7 @@ pdbproc_dir = work_dir + "/pdb_proc"
 
 rule download_pdb:
     output:
-        pdbproc_dir+"/pristine/{stem}.pdb"
-        #config["structures_folder"]+"/{stem}.pdb"
+        pdbproc_dir+"/pristine/{stem}.pdb",
     log:
         pdbproc_dir+"/pristine/{stem}.log"
     params:
@@ -39,11 +38,23 @@ rule download_pdb:
         local = config["structures_folder"]+"/"+wildcards.stem+".pdb"
         if os.path.exists(local):
             logf.write(f"copying file {local} to {output}\n")
-            shell("cp {local} {output}")
+            shell("cp {local} {output[0]}")
         else:
             logf.write(f"downloading {params.stem} to {output}\n")
-            shell("pdb_fetch {params.stem} > {output}")
+            shell("pdb_fetch {params.stem} > {output[0]}")
         logf.close()
+
+rule copy_alreadyprepared4fix:
+        input:
+            config["preprocessed_structures"]+"/{stem}.pdb"
+        output:
+            pdbproc_dir+"/pristine/{stem,[^_]+}.pdb",
+        shell:
+            """
+                cp {input} {output[0]}
+            """
+
+ruleorder:  copy_alreadyprepared4fix > download_pdb
 
 rule download_swiss_prot_db:
     params:
@@ -157,8 +168,9 @@ rule fix_with_promod:
     threads: 4
     shell:
         """
+        cat {input} | grep -e "^SEQRES" > {output}
         export OPENMM_CPU_THREADS={threads}
-        PYTHONPATH=covid-lt covid-lt/bin/promod-fix-pdb --trim {input[0]} 1> {output} 2> {log}
+        PYTHONPATH=covid-lt covid-lt/bin/promod-fix-pdb --simulate --trim {input[0]} 1>> {output} 2> {log}
         """ 
 
 
@@ -227,33 +239,29 @@ rule pdb_fix:
         rm {params.pdb}
         """
 
-rule copy_alreadyprepared4fix:
-        input:
-            config["preprocessed_structures"]+"/{stem}.pdb"
-        output:
-            work_dir+"/process_provided/{stem,[^_]+}.pdb"
-        shell:
-            "cp {input} {output}"
 
-rule copy_alreadyprepared:
-        input:
-            work_dir+"/process_provided/{stem}.pdb"
-            #work_dir+"/process_provided/{stem}_pdb2pqr.pdb"
-        output:
-            work_dir+"/processed/{stem,[^_]+}.pdb"
-        shell:
-            "cp {input} {output}"
+def choose_processing_intensity(wildcards):
+    """ Choose processing intensity on the input structures - downloaded from 
+    PDB are thoroughly cleaned, those already processed: SEQRES are regenerated and residues renumbered from 1 
+    """
+    
+    inir = config["preprocessed_structures"]
+    inir_structures = glob.glob("*.pdb", root_dir = inir)
+    inir_structures = [s.replace(".pdb","") for s in inir_structures]
+    if not wildcards.stem in inir_structures: # if such pdb is found in preprocessed structures
+        out =  pdbproc_dir + f"/process/{wildcards.stem}_seqresMatched_woHOH_promod.pdb" 
+    else:
+        out =  pdbproc_dir + f"/process/{wildcards.stem}_seqresMatched_woHOH.pdb" 
+    return(out)
 
 rule copy_prepared:
         input:
-            pdbproc_dir + "/process/{stem}_seqresMatched_woHOH_pdbfix_pdb2pqr_promod.pdb"
-            #pdbproc_dir + "/process/{stem}_seqresMatched_woHOH_pdbfix_promod.pdb"
+            choose_processing_intensity
         output:
             work_dir+"/processed/{stem,[^_]+}.pdb"
         shell:
             "cp {input} {output}"
 
-ruleorder:  copy_alreadyprepared > copy_prepared
 
 #extract fasta files and run hhblitz to identify antibodies
 
@@ -264,21 +272,6 @@ rule extract_seqs:
         work_dir+"/processed_info/{stem,[^_]+}.fasta"
     shell:
         "pdb_tofasta -multi {input} > {output} "
-
-rule extract_seqs_by_chain:
-    input:
-        sequence = work_dir+"/processed_info/{stem,[^_]+}.fasta",
-        container = "containers/promod.sif"
-    output:
-        work_dir+"/processed_info/{stem}_chain_{chain}.fasta"
-    container:
-        "containers/promod.sif"
-    shell:
-        """
-        covid-lt/bin/fasta2pdb_seqres {input.sequence} \
-            | awk '{{if( substr($_,12,1) == "{wildcards.chain}") {{ print }}}}' \
-            | covid-lt/bin/pdb_seqres2fasta > {output}
-        """
 
 rule search4antibodies:
     input:

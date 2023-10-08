@@ -16,13 +16,27 @@ rule provean_nr:
         )
         """
 
+# This rule is needed as containers/provean.sif does not have python3-biopython
+rule run_PROVEAN_sequence:
+    input:
+        structure = work_dir + "/processed/{pdb}.pdb"
+    output:
+        work_dir + "/mutants_structure_scoring/PROVEAN/sequences/{pdb}={chain}=nan.fasta"
+    shell:
+        """
+        covid-lt-new/bin/pdb_select --chain {wildcards.chain} {input} \
+            | covid-lt-new/bin/pdb_atom2fasta > {output}
+        """
+
 rule run_PROVEAN_eval:
     input:
-        sequence = work_dir + "/processed_info/{pdb}_chain_{chain}.fasta",
+        sequence = work_dir + "/mutants_structure_scoring/PROVEAN/sequences/{pdb}={chain}=nan.fasta",
         container = "containers/provean.sif", # to prepare the container
         nr = "data/nr/2011-08/nr.pal" # to prepare the NR database
     output:
         work_dir + "/mutants_structure_scoring/PROVEAN/scores/{pdb}={chain}={mutations}.sc"
+    log:
+        work_dir + "/mutants_structure_scoring/PROVEAN/scores/{pdb}={chain}={mutations}.log"
     container:
         "containers/provean.sif"
     threads: 4
@@ -34,10 +48,27 @@ rule run_PROVEAN_eval:
         MUT_FILE=$(mktemp)
         echo {wildcards.mutations}  | sed 's/-/del/g' | tr + '\n' > $MUT_FILE
 
-        (cd $(dirname {input.nr}) && provean --num_threads {threads} -q $FASTA_FILE -v $MUT_FILE --psiblast psiblast --cdhit cdhit --blastdbcmd blastdbcmd -d nr) > {output}
+        (cd $(dirname {input.nr}) && provean --num_threads {threads} -q $FASTA_FILE -v $MUT_FILE --psiblast psiblast --cdhit cdhit --blastdbcmd blastdbcmd -d nr) > {output} 2> {log}
 
         rm $MUT_FILE
         sleep 1
 
         """
         #echo "E144del;F145del" > $MUT_FILE
+
+rule run_PROVEAN_sum:
+    input:
+        score = work_dir + "/mutants_structure_scoring/PROVEAN/scores/{pdb}={chain}={mutations}.sc",
+        container = "containers/r-cran.sif"
+    output:
+        work_dir + "/mutants_structure_scoring/PROVEAN/scores/{pdb}={chain}={mutations}.sum"
+    container:
+        "containers/r-cran.sif"
+    shell:
+        """
+        grep -vP '^[\[#]' {input.score} \
+            | grep -v ^provean \
+            | grep -v '^$' \
+            | cut -f 2 \
+            | covid-lt-new/bin/sum > {output}
+        """

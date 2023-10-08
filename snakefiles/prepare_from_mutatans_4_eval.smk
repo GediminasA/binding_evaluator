@@ -1,4 +1,4 @@
-#aggregate_TEMPLATE_promod_models_ready_4_eval
+#aggregate_TEMPLATE_all_models_ready_4_eval
 
 
 rule run_prodigy_mutants:

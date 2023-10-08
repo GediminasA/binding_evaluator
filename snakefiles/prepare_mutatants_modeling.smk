@@ -221,17 +221,17 @@ def aggregate_TEMPLATE_seqs(wildcards):
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{stem}.fasta",stem=stems))
 
-def aggregate_TEMPLATE_promod_models(wildcards):
+def aggregate_TEMPLATE_all_models(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
-    return(expand(work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{stem}.pdb",stem=stems))
+    return(expand(work_dir + "/mutants_structure_generation/TEMPLATES/all_models/{stem}.pdb",stem=stems))
 
-def aggregate_TEMPLATE_promod_models_ready_4_eval(wildcards):
+def aggregate_TEMPLATE_all_models_ready_4_eval(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(work_dir + "/evaluation/starting_structures/{stem}_1.pdb",stem=stems))
 
-def aggregate_TEMPLATE_promod_models_ready_4_eval_with_conformers(wildcards):
+def aggregate_TEMPLATE_all_models_ready_4_eval_with_conformers(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(work_dir + "/evaluation/starting_structures/{stem}_{id}.pdb",stem=stems, id = range(1, nconf+2)))
@@ -240,11 +240,11 @@ rule model_mutants_promod:
     input:
         "containers/promod.sif",
         structure = work_dir+"/processed/{pdb}.pdb",
-        sequence = work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{pdb}={chain}={mutations}.fasta" 
+        sequence = work_dir + "/mutants_structure_generation/TEMPLATES/sequences/{pdb}={chain}={mutations,[^_]+}.fasta"
     output:
         model = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_faspr.pdb"
     log:
-        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.log"
+        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}_before_faspr.log"
     container:
         "containers/promod.sif"
     threads: 8
@@ -261,30 +261,90 @@ rule model_mutants_promod_faspr:
     output:
         work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}.pdb"
     log:
-        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.log"
+        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations,[^_]+}.log"
     container:
         "containers/faspr.sif"
     shell:
         "FASPR -i {input.structure} -o {output} 2>&1 | cat >> {log}"
 
+rule mutated_sequences:
+    input:
+        structure = work_dir+"/processed/{pdb}.pdb",
+        groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
+        container = "containers/promod.sif"
+    output:
+        work_dir + "/mutants_structure_generation/TEMPLATES/mutated_sequences/{pdb}={chain}={mutations,[^_]+}.fasta"
+    container:
+        "containers/promod.sif"
+    shell:
+        """
+        MUTATIONS=
+        if [ "{wildcards.mutations}" != nan ]
+        then
+            MUTATIONS=$(echo {wildcards.mutations} \
+                | tr + ' ' \
+                | xargs -n 1 echo \
+                | awk '{{ print substr($0, 0, 1) "{wildcards.chain}" substr($0, 2) }}' \
+                | xargs -i echo --replace {{}})
+        fi
+
+        covid-lt-new/bin/pdb_select --first-model --chain $(cat {input.groups} | cut -f 1,2 | sed 's/[\t,]//g') {input.structure} \
+            | PYTHONPATH=covid-lt-new covid-lt-new/bin/promod-fix-pdb --output-alignment-only \
+            | grep -A 1 --no-group-separator :structure \
+            | sed 's/:structure//' \
+            | sed 's/> />{wildcards.pdb}:/' \
+            | covid-lt-new/bin/fasta_mutate $MUTATIONS > {output}
+        """
+
 rule model_mutants_faspr:
     input:
-        structure = work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/{pdb}={chain}={mutations}.pdb",
+        structure = work_dir+"/processed/{pdb}.pdb",
+        sequence = work_dir + "/mutants_structure_generation/TEMPLATES/mutated_sequences/{pdb}={chain}={mutations,[^_]+}.fasta",
+        groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
         container = "containers/faspr.sif"
     output:
-        work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations}.pdb"
+        work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations,[^_]+}.pdb"
     container:
         "containers/faspr.sif"
     shell:
-        "FASPR -i {input.structure} -o {output}"
+        """
+        rm -f {output}
 
-# This rule is needed to add hydrogens to FASPR-optimized structures as FASPR does not do that itself
-rule model_mutants_promod_after_faspr:
+        TMPFILE=$(mktemp --suffix .pdb)
+        covid-lt-new/bin/pdb_select --first-model --chain $(cat {input.groups} | cut -f 1,2 | sed 's/[\t,]//g') {input.structure} \
+            | PYTHONPATH=covid-lt-new covid-lt-new/bin/pdb_resolve_alternate_locations > $TMPFILE
+        grep -v '^>' {input.sequence} \
+            | tr -d - \
+            | tr -d X \
+            | grep -o . \
+            | xargs echo \
+            | sed 's/ //g' \
+            | FASPR -i $TMPFILE -s /dev/stdin -o {output} || true
+        rm $TMPFILE
+        test -e {output}
+        """
+
+# Insertions and deletions are build by ProMod, other mutants and wild type structures are built by FASPR
+def select_model_method(wildcards):
+    if wildcards.mutations.count("-") or wildcards.mutations.count("ins"):
+        return [work_dir + "/mutants_structure_generation/TEMPLATES/promod_models/" + wildcards.pdb + "=" + wildcards.chain + "=" + wildcards.mutations + ".pdb"]
+    else:
+        return [work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/" + wildcards.pdb + "=" + wildcards.chain + "=" + wildcards.mutations + ".pdb"]
+
+rule model_mutants_all:
     input:
-        structure = work_dir + "/mutants_structure_generation/TEMPLATES/faspr_models/{pdb}={chain}={mutations}.pdb",
-        container = "containers/promod.sif"
+        select_model_method
     output:
-        work_dir + "/mutants_structure_generation/TEMPLATES/promod_models_after_faspr/{pdb}={chain}={mutations}.pdb"
+        work_dir + "/mutants_structure_generation/TEMPLATES/all_models/{pdb}={chain}={mutations,[^_]+}_raw.pdb"
+    shell:
+        "cp {input} {output}"
+
+# This rule is needed to add hydrogens to structures as mutant builders do not do that themselves
+rule model_mutants_all_simulated:
+    input:
+        structure = work_dir + "/mutants_structure_generation/TEMPLATES/all_models/{pdb}={chain}={mutations,[^_]+}_raw.pdb"
+    output:
+        work_dir + "/mutants_structure_generation/TEMPLATES/all_models/{pdb}={chain}={mutations,[^_]+}.pdb"
     container:
         "containers/promod.sif"
     shell:
@@ -446,14 +506,14 @@ rule DeepRefine:
 #### aggregates for evaluation collection and testing
 
 
-def aggregate_TEMPLATE_promod_models_prodigy(wildcards):
+def aggregate_TEMPLATE_all_models_prodigy(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(
         work_dir + "/evaluation/scores/{stem}_{id}_prodigy.tsv",
         stem=stems, id=[1]))
 
-def aggregate_TEMPLATE_promod_models_prodigy_with_conformers(wildcards):
+def aggregate_TEMPLATE_all_models_prodigy_with_conformers(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(
@@ -461,7 +521,7 @@ def aggregate_TEMPLATE_promod_models_prodigy_with_conformers(wildcards):
         work_dir + "/evaluation/scores/{stem}_{id}_prodigy.tsv",
         stem=stems, id=range(1, nconf+2)))
 
-def aggregate_TEMPLATE_promod_models_evoef1(wildcards):
+def aggregate_TEMPLATE_all_models_evoef1(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(
@@ -469,7 +529,7 @@ def aggregate_TEMPLATE_promod_models_evoef1(wildcards):
         work_dir + "/evaluation/scores/{stem}_1_evoef1.tsv",
         stem=stems))
 
-def aggregate_TEMPLATE_promod_models_evoef1_with_conformers(wildcards):
+def aggregate_TEMPLATE_all_models_evoef1_with_conformers(wildcards):
     checkpoint_output = checkpoints.create_idividual_tasks_4_modeling_with_sequence.get(**wildcards).output[0]
     stems = glob_wildcards(os.path.join(checkpoint_output, "{i,[^\.].+}")).i #rehex prevents snakemake temps to be included
     return(expand(
@@ -480,26 +540,30 @@ def aggregate_TEMPLATE_promod_models_evoef1_with_conformers(wildcards):
 
 rule mutants_targets_templates:
     input:
-        target = aggregate_TEMPLATE_promod_models_prodigy,
+        target = aggregate_TEMPLATE_all_models_prodigy,
         # modelling_templates = aggregate_TEMPLATE_seqs,
-        #promod_models = aggregate_TEMPLATE_promod_models,
-        #promod_models_copied_4_eval = aggregate_TEMPLATE_promod_models_ready_4_eval,
-        #promod_models_copied_4_eval_with_conformers = aggregate_TEMPLATE_promod_models_ready_4_eval_with_conformers,
-        #promod_models_prodigy_evals = aggregate_TEMPLATE_promod_models_prodigy,
-        #promod_models_prodigy_evals_with_conformers = aggregate_TEMPLATE_promod_models_prodigy_with_conformers,
-        #promod_models_evoef1_evals = aggregate_TEMPLATE_promod_models_evoef1,
-        #promod_models_evoef1_evals_with_conformers = aggregate_TEMPLATE_promod_models_evoef1_with_conformers
+        #promod_models = aggregate_TEMPLATE_all_models,
+        #promod_models_copied_4_eval = aggregate_TEMPLATE_all_models_ready_4_eval,
+        #promod_models_copied_4_eval_with_conformers = aggregate_TEMPLATE_all_models_ready_4_eval_with_conformers,
+        #promod_models_prodigy_evals = aggregate_TEMPLATE_all_models_prodigy,
+        #promod_models_prodigy_evals_with_conformers = aggregate_TEMPLATE_all_models_prodigy_with_conformers,
+        #promod_models_evoef1_evals = aggregate_TEMPLATE_all_models_evoef1,
+        #promod_models_evoef1_evals_with_conformers = aggregate_TEMPLATE_all_models_evoef1_with_conformers
 
 rule collect_ddG_binding:
     input:
-        promod_models_prodigy_evals = aggregate_TEMPLATE_promod_models_prodigy_with_conformers,
-        promod_models_evoef1_evals = aggregate_TEMPLATE_promod_models_evoef1_with_conformers,
+        promod_models_prodigy_evals = aggregate_TEMPLATE_all_models_prodigy_with_conformers,
+        promod_models_evoef1_evals = aggregate_TEMPLATE_all_models_evoef1_with_conformers,
         ddg = work_dir + "/rezults/mutation_ddg_predictions.csv"
     output:
         ddg_results_on_promod_full = mutrez + "/promod_models_results_full.csv",
         ddg_results_on_promod_main = mutrez + "/promod_models_results_main.csv",
     notebook:
         "notebooks/collect_results_4promod.r.ipynb"
+
+rule test4m:
+    input:
+        ddg = work_dir + "/rezults/mutation_ddg_predictions.csv"
 
 rule get_summary_of_binding:
     input:

@@ -6,7 +6,7 @@ def aggregate_mutation_stems(wildcards):
         expand(work_dir + "/mutants_structure_scoring/DSSP/scores/part/{stem}.sum", stem=stems) + \
         expand(work_dir + "/mutants_structure_scoring/EvoEF1/scores/{stem}.diff", stem=stems) + \
         expand(work_dir + "/mutants_structure_scoring/OpenMM/scores/{stem}.diff", stem=stems) + \
-        expand(work_dir + "/mutants_structure_scoring/PROVEAN/scores/{stem}.sc", stem=stems)
+        expand(work_dir + "/mutants_structure_scoring/PROVEAN/scores/{stem}.sum", stem=stems)
 
 
 def aggregate_mutation_stems4dgg(wildcards):
@@ -62,16 +62,18 @@ rule collect_binding_terms:
                 | grep -v '=nan$' \
                 | while read LABEL
                   do
-                    echo $LABEL
-                    awk '{{print $5 " " $7 - $6}}' < {work_dir}/mutants_structure_scoring/CADscore/scores/$LABEL.sc
-                    cat {work_dir}/mutants_structure_scoring/DSSP/scores/complex/$LABEL.sum
-                    cat {work_dir}/mutants_structure_scoring/DSSP/scores/part/$LABEL.sum
-                    cat {work_dir}/mutants_structure_scoring/EvoEF1/scores/$LABEL.diff
-                    cut -f 2 {work_dir}/mutants_structure_scoring/OpenMM/scores/$LABEL.diff
-                    tail -n 1 {work_dir}/mutants_structure_scoring/PROVEAN/scores/$LABEL.sc | cut -f 2
-                  done \
-                | xargs echo \
-                | sed 's/ /,/g'
+                    (
+                        echo $LABEL
+                        awk '{{print $5 " " $7 - $6}}' < {work_dir}/mutants_structure_scoring/CADscore/scores/$LABEL.sc
+                        cat {work_dir}/mutants_structure_scoring/DSSP/scores/complex/$LABEL.sum
+                        cat {work_dir}/mutants_structure_scoring/DSSP/scores/part/$LABEL.sum
+                        cat {work_dir}/mutants_structure_scoring/EvoEF1/scores/$LABEL.diff
+                        cut -f 2 {work_dir}/mutants_structure_scoring/OpenMM/scores/$LABEL.diff
+                        cat {work_dir}/mutants_structure_scoring/PROVEAN/scores/$LABEL.sum
+                    ) \
+                        | xargs echo \
+                        | sed 's/ /,/g'
+                  done
         ) > {output}
         """
 
