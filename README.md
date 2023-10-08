@@ -50,7 +50,7 @@ The target mutations can by generated as:
 snakemake --profile local --configfile configs/antibody.yaml  -k antibody_run/mutants_structure_generation/TEMPLATES/todoList
 ```
 
-A workflow assesing muttions impact on protein binding can be invoked like this 
+A workflow assessing mutations impact on protein binding can be invoked like this 
 
 ```
 snakemake --profile local --configfile configs/antibody.yaml  -k get_summary_of_binding
