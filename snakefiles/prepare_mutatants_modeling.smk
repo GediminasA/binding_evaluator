@@ -270,7 +270,6 @@ rule model_mutants_promod_faspr:
 rule mutated_sequences:
     input:
         structure = work_dir+"/processed/{pdb}.pdb",
-        #structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
         groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
         container = "containers/promod.sif"
     output:
@@ -299,7 +298,7 @@ rule mutated_sequences:
 
 rule model_mutants_faspr:
     input:
-        structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
+        structure = work_dir+"/processed/{pdb}.pdb",
         sequence = work_dir + "/mutants_structure_generation/TEMPLATES/mutated_sequences/{pdb}={chain}={mutations,[^_]+}.fasta",
         groups = work_dir + "/processed_info/{pdb}_interactigGroups.tsv",
         container = "containers/faspr.sif"

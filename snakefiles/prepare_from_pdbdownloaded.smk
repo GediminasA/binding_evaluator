@@ -1,4 +1,4 @@
-import os
+import os, glob
 ### CONTAINER BUILDING RULES ###
 
 rule build_promod:
@@ -27,7 +27,6 @@ pdbproc_dir = work_dir + "/pdb_proc"
 rule download_pdb:
     output:
         pdbproc_dir+"/pristine/{stem}.pdb",
-        pdbproc_dir+"/pristine/{stem,[^_]+}_downloaded"
     log:
         pdbproc_dir+"/pristine/{stem}.log"
     params:
@@ -44,18 +43,15 @@ rule download_pdb:
             logf.write(f"downloading {params.stem} to {output}\n")
             shell("pdb_fetch {params.stem} > {output[0]}")
         logf.close()
-        shell("touch {output[1]}")
 
 rule copy_alreadyprepared4fix:
         input:
             config["preprocessed_structures"]+"/{stem}.pdb"
         output:
             pdbproc_dir+"/pristine/{stem,[^_]+}.pdb",
-            pdbproc_dir+"/pristine/{stem,[^_]+}_copyfromprepare"
         shell:
             """
                 cp {input} {output[0]}
-                touch {output[1]}
             """
 
 ruleorder:  copy_alreadyprepared4fix > download_pdb
@@ -174,7 +170,7 @@ rule fix_with_promod:
         """
         cat {input} | grep -e "^SEQRES" > {output}
         export OPENMM_CPU_THREADS={threads}
-        PYTHONPATH=covid-lt covid-lt/bin/promod-fix-pdb --trim {input[0]} 1>> {output} 2> {log}
+        PYTHONPATH=covid-lt covid-lt/bin/promod-fix-pdb --simulate --trim {input[0]} 1>> {output} 2> {log}
         """ 
 
 
@@ -243,10 +239,24 @@ rule pdb_fix:
         rm {params.pdb}
         """
 
+
+def choose_processing_intensity(wildcards):
+    """ Choose processing intensity on the input structures - downloaded from 
+    PDB are thoroughly cleaned, those already processed: SEQRES are regenerated and residues renumbered from 1 
+    """
+    
+    inir = config["preprocessed_structures"]
+    inir_structures = glob.glob("*.pdb", root_dir = inir)
+    inir_structures = [s.replace(".pdb","") for s in inir_structures]
+    if not wildcards.stem in inir_structures: # if such pdb is found in preprocessed structures
+        out =  pdbproc_dir + f"/process/{wildcards.stem}_seqresMatched_woHOH_promod.pdb" 
+    else:
+        out =  pdbproc_dir + f"/process/{wildcards.stem}_seqresMatched_woHOH.pdb" 
+    return(out)
+
 rule copy_prepared:
         input:
-            #pdbproc_dir + "/process/{stem}_seqresMatched_woHOH.pdb"
-            pdbproc_dir + "/process/{stem}_seqresMatched_woHOH_pdbfix_pdb2pqr_promod.pdb" #- this works with all prodigy dataset
+            choose_processing_intensity
         output:
             work_dir+"/processed/{stem,[^_]+}.pdb"
         shell:

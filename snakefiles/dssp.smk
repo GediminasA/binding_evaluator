@@ -1,6 +1,6 @@
 rule run_DSSP_part_eval:
     input:
-        structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
+        structure = work_dir+"/processed/{pdb}.pdb",
         container = "containers/dssp.sif"
     output:
         work_dir + "/mutants_structure_scoring/DSSP/scores/part/{pdb,[^=]+}={chain,[^=]+}.sc"
@@ -16,7 +16,7 @@ rule run_DSSP_part_eval:
 
 rule run_DSSP_complex_eval:
     input:
-        structure = work_dir + "/pdb_proc/pristine/{pdb}.pdb",
+        structure = work_dir+"/processed/{pdb}.pdb",
         container = "containers/dssp.sif"
     output:
         work_dir + "/mutants_structure_scoring/DSSP/scores/complex/{pdb,[^=]+}={chain,[^=]+}.sc"
