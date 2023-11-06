@@ -1,3 +1,6 @@
+## Funding
+This project has received funding from European Regional Development Fund (project No 13.1.1-LMT-K-718-05-0023) under grant agreement with the Research Council of Lithuania (LMTLT). Funded as European Union's measure in response to Cov-19 pandemic."
+
 ## Workflow setup
 
 1. Install `conda`:
